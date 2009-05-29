@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <title>Introduction</title>
+    </properties>
+    <body>
+        <section name="Introduction">
+            <p>
+                This document is mainly a
+                <b>reference manual</b> on the main concepts in the
+                <code>AspectWerkz</code> framework and how they are used.
+            </p>
+            <p>
+                You most likely
+                <b>not</b> learn Aspect-Oriented Programming
+                by only reading this reference manual.
+            </p>
+            <p>
+                If you are familiar with AOP but are new to AspectWerkz, please read one of the
+                introductory
+                <a href="http://docs.codehaus.org/display/AW/Tutorials">tutorials</a> to get started.
+            </p>
+            <p>
+                If you are a beginner we recommend that you first read some introductory articles on the
+                subject. For example one of the
+                <a href="http://www.javaworld.com/javaworld/jw-01-2002/jw-0118-aspect.html">JavaWorld's</a>
+                series of articles.
+            </p>
+            <p>
+                You can access materials of our talks at main Java events (JavaPolis, JavaOne, AOSD, JAOO, User Groups, etc)
+                in the <a href="papers_talks.html">papers and talks section</a>.
+            </p>
+        </section>
+    </body>
+</document>
+

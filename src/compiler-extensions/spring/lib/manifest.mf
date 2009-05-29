@@ -1,0 +1,1 @@
+Class-Path: aopalliance-1.0.jar spring-aop-1.1.1.jar

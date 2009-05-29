@@ -1,0 +1,11 @@
+<!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="system/asCL">
+        <aspect class="test.aopc.BaseAspect">
+            <pointcut name="methodAround" expression="execution(* test.aopc.Callable+.methodAround(..))"/>
+            <advice name="logAround" type="around" bind-to="methodAround"/>
+        </aspect>
+    </system>
+</aspectwerkz>

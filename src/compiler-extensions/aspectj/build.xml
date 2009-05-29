@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+
+<!-- ==================================================================================== -->
+<!--  Copyright (c) Jonas Bonér, Alexandre Vasseur. All rights reserved.                  -->
+<!--  http://aspectwerkz.codehaus.org                                                     -->
+<!--  ==================================================================================  -->
+<!--  The software in this package is published under the terms of the LGPL style license -->
+<!--  a copy of which has been included with this distribution in the license.txt file.   -->
+<!--  ==================================================================================  -->
+
+<!-- ============================================================== -->
+<!-- Ant build file for the AspectWerkz compiler extension for AspectJ -->
+<!-- ============================================================== -->
+<project name="AspectWerkz Compiler Extension For AspectJ" default="dist" basedir=".">
+
+    <path id="project.class.path">
+        <pathelement path="${java.home}/../lib/tools.jar"/>
+        <fileset dir="${basedir}/lib">
+            <exclude name="jarjar*"/>
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${basedir}/../../../lib">
+            <exclude name="jarjar*"/>
+            <include name="*.jar"/>
+        </fileset>
+        <!-- external classpath -->
+        <pathelement path="${java.class.path}"/>
+    </path>
+
+    <taskdef name="ajc" classname="org.aspectj.tools.ant.taskdefs.AjcTask" classpathref="project.class.path"/>
+
+    <!-- =================================================== -->
+    <!--  initializes parameters  -->
+    <!-- =================================================== -->
+    <target name="init">
+        <property name="name" value="aw-ext-aspectj"/>
+        <property name="version" value="0.1"/>
+        <property name="basedir" value="."/>
+        <property name="src.dir" value="${basedir}/src"/>
+        <property name="test.src.dir" value="${basedir}/src/test"/>
+        <property name="build.dir" value="${basedir}/target"/>
+        <property name="build.core.dir" value="${build.dir}/classes"/>
+        <property name="build.test.dir" value="${build.dir}/test-classes"/>
+        <property name="build.samples.dir" value="${build.dir}/samples-classes"/>
+        <property name="samples.src.dir" value="${basedir}/src/samples"/>
+        <property name="lib.dir" value="${basedir}/lib"/>
+        <property name="config.dir" value="${basedir}/config"/>
+        <property name="javac.debug" value="on"/>
+        <property name="javac.deprecation" value="on"/>
+        <property name="javac.optimize" value="off"/>
+        <property name="javac.depend" value="off"/>
+        <property name="javac.verbose" value="off"/>
+
+        <!-- os specific -->
+        <condition property="pathseparator" value=";">
+            <os family="dos"/>
+        </condition>
+        <condition property="executableSuffix" value=".bat">
+            <os family="dos"/>
+        </condition>
+        <!-- os specific -->
+        <condition property="pathseparator" value=":">
+            <not>
+                <os family="dos"/>
+            </not>
+        </condition>
+        <condition property="executableSuffix" value="">
+            <not>
+                <os family="dos"/>
+            </not>
+        </condition>
+        <property name="aw.home" value="${basedir}/../../../"/>
+        <property name="target.dir" value="${basedir}/target"/>
+        <property name="lib.dir" value="${basedir}/lib"/>
+        <property name="bin.dir" value="${basedir}/bin"/>
+        <property name="main.classes" value="${target.dir}/classes"/>
+        <property name="test.classes" value="${target.dir}/test-classes"/>
+        <property name="project.name" value="aspectwerkz"/>
+        <property environment="env"/>
+        <condition property="jdk15" value="yes">
+            <contains string="${java.version}" substring="1.5"/>
+        </condition>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- clean -->
+    <!-- ============================================================== -->
+    <target name="clean" depends="init">
+        <delete dir="${build.core.dir}"/>
+        <delete dir="${build.test.dir}"/>
+        <delete dir="${build.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.core.dir}"/>
+        <mkdir dir="${build.test.dir}"/>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- compiles the distribution  -->
+    <!-- ============================================================== -->
+    <target name="compile" depends="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.core.dir}"/>
+        <javac destdir="${build.core.dir}" debug="on">
+            <src path="${src.dir}/main"/>
+            <classpath>
+                <path refid="project.class.path"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- compiles the tests -->
+    <!-- ============================================================== -->
+    <target name="compile:test" depends="init, compile">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.test.dir}"/>
+        <javac destdir="${build.test.dir}" debug="on" excludes="**/*.aj">
+            <src path="${test.src.dir}"/>
+            <classpath>
+                <pathelement path="${build.core.dir}"/>
+                <path refid="project.class.path"/>
+            </classpath>
+        </javac>
+        <ajc srcdir="${test.src.dir}/test/aj/aspect" destdir="${build.test.dir}">
+            <classpath>
+                <pathelement path="${build.test.dir}"/>
+                <path refid="project.class.path"/>
+            </classpath>
+        </ajc>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- compiles the samples -->
+    <!-- ============================================================== -->
+    <target name="compile:samples" depends="init, compile">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.samples.dir}"/>
+        <javac destdir="${build.samples.dir}" debug="on" excludes="**/*.aj">
+            <src path="${samples.src.dir}"/>
+            <classpath>
+                <pathelement path="${build.core.dir}"/>
+                <path refid="project.class.path"/>
+            </classpath>
+        </javac>
+        <ajc srcdir="${samples.src.dir}/samples/aspect" destdir="${build.samples.dir}">
+            <classpath>
+                <pathelement path="${build.samples.dir}"/>
+                <path refid="project.class.path"/>
+            </classpath>
+        </ajc>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- compiles all -->
+    <!-- ============================================================== -->
+    <target name="compile:all" depends="init">
+        <antcall target="compile"/>
+        <antcall target="compile:test"/>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- create distribution -->
+    <!-- ============================================================== -->
+    <target name="dist" depends="compile">
+        <jar destfile="${build.dir}/${name}-${version}.jar" manifest="${lib.dir}/manifest.mf">
+            <fileset dir="${build.core.dir}"/>
+            <zipfileset src="${basedir}/lib/aspectjtools.jar"/>
+            <zipfileset src="${basedir}/lib/aspectjrt.jar"/>
+        </jar>
+    </target>
+
+
+    <!-- ============================================================== -->
+    <!-- run the tests -->
+    <!-- ============================================================== -->
+    <target name="test" depends="compile:test">
+        <exec executable="${aw.home}/bin/aspectwerkz${executableSuffix}">
+            <arg line="-Daspectwerkz.extension.aspectmodels=org.codehaus.aspectwerkz.transform.aspectj.AspectJAspectModel -cp ${basedir}/lib/xercesImpl.jar${pathseparator}${build.test.dir}${pathseparator}${build.core.dir}${pathseparator}${basedir}/lib/aspectjtools.jar${pathseparator}${basedir}/lib/aspectjrt.jar${pathseparator}${aw.home}/lib/junit-3.8.1.jar -Daspectwerkz.definition.file=${test.src.dir}/aop.xml -Daspectwerkz.transform.dump=* test.aj.Test"/>
+        </exec>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- run the redefinition sample -->
+    <!-- ============================================================== -->
+    <target name="samples:redef" depends="compile:samples">
+        <exec executable="${aw.home}/bin/aspectwerkz${executableSuffix}">
+            <arg line="-Daspectwerkz.extension.aspectmodels=org.codehaus.aspectwerkz.transform.aspectj.AspectJAspectModel -cp ${build.samples.dir}${pathseparator}${build.core.dir}${pathseparator}${basedir}/lib/aspectjtools.jar${pathseparator}${basedir}/lib/aspectjrt.jar${pathseparator}${aw.home}/lib/junit-3.8.1.jar -Daspectwerkz.definition.file=${samples.src.dir}/aop.xml -Daspectwerkz.transform.dump=* samples.Redef"/>
+        </exec>
+    </target>
+
+</project>

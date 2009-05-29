@@ -1,0 +1,765 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <author email="alex at gnilux dot com">alexandre vasseur</author>
+        <title>Annotation definition</title>
+    </properties>
+    <body>
+        <section name="Annotation definition">
+            <p>
+                What is important to understand is that both the Annotation and the XML definition are just
+                different views of the same underlying model. This means that they can easily co-exist and can
+                succesfully be used together. The XML definition can be used as a replacement to the Annotation definition
+                or as a complement. It can be used to refine and override definitions made in annotations as well as
+                resolve missing pieces (for example pointcut definitions referenced but not defined) in the annotation
+                definition. See the
+                <a href="implementation.html#Choosing a definition model">Choosing a definition model</a>
+                section for best practices.
+            </p>
+            <p>
+            	AspectWerkz fully supports Java 5 annotations to define aspects or simply match on, and provides
+                a Java 1.3/1.4 annotation API and custom compiler that allows to use the same feature with a very
+                close user experience. Strongly typed Java 1.3/1.4 annotations facilities is thus provided. 
+            </p>
+        </section>
+        <section name="Table of Contents">
+            <p>
+                <ol>
+                    <li>
+                        <a href="#Aspects">Aspects</a>
+                    </li>
+                    <li>
+                        <a href="#Pointcuts">Pointcuts</a>
+                    </li>
+                    <li>
+                        <a href="#Advice">Advice</a>
+                    </li>
+                    <li>
+                        <a href="#Introductions">Introductions</a>
+                    </li>
+                    <li>
+                        <a href="#Annotation reference">Annotation reference</a>
+                    </li>
+                    <li>
+                        <a href="#Aspect annotation compilation">Aspect annotation compilation</a>
+                    </li>
+                    <li>
+                        <a href="#XML deployment descriptor">XML deployment descriptor</a>
+                    </li>
+                </ol>
+            </p>
+        </section>
+        <section name="Aspects">
+            <p>
+                    Even if all definition is made using annotations (and nothing in XML) a tiny deployment descriptor in
+                    XML still has to be written. This is needed for the runtime system to know which aspects it should
+                    load. See the
+                <a href="#XML deployment descriptor">XML deployment descriptor</a> section for more
+                    information on how to write such a deployment descriptor.
+            </p>
+            <p>
+                    When defining an aspect using annotations, the deployment model is specified as metadata argument
+                    of the metadata tag
+                <code>@Aspect</code>.
+            </p>
+            <p>
+                <code>@Aspect</code> class level metadata has an optional anonymous parameter which specifies the
+                    deployment model. The default is
+                <code>perJVM</code> if not specified.
+                <ul>
+                    <li>
+                        <code>@Aspect("perJVM")</code> - deploys the aspect as perJVM. This is the default if only
+                        <code>@Aspect</code> is specified.
+                    </li>
+                    <br/>
+                    <li>
+                        <code>@Aspect("perClass")</code> - deploys the aspect as perClass.
+                    </li>
+                    <br/>
+                    <li>
+                        <code>@Aspect("perInstance")</code> - deploys the aspect as perInstance.
+                    </li>
+                    <br/>
+                    <li>an optional
+                        <code>name=</code> named parameter which specify the name of the aspect.
+                             The default is the aspect class name if not specified.
+                    </li>
+                    <br/>
+                </ul>
+                    It is also possible to not declare the
+                <code>@Aspect</code> at all and define the deployment model in the
+                    XML descriptor.
+            </p>
+            <subsection name="Pointcut definition">
+                <p>
+                    In the aspect class you put the pointcut definitions as fields of the type
+                    <code>org.codehaus.aspectwerkz.definition.Pointcut</code>
+                    along with metadata annotations which specifies the type of (staticinitialization, execution, call, set, get, cflow or handler)
+                    and pattern for the pointcut.
+                    <br/>
+                    If the pointcut is used to retain parameters value of the matching target (method/constructor execution/call and field value set)
+                    it has to be defined as a method, with a signature that conforms to the
+                    <code>args()</code> selector in the expression.
+                    For details see the
+                    <a href="#Pointcuts">Pointcuts</a> section.
+                </p>
+            </subsection>
+            <subsection name="Advice definition">
+                <p>
+                    Define the type of the advice using annotation for the method along with the
+                    <a href="definition_issues.html#Pointcut definition">pointcut</a> to which it the advice should be bound.
+                </p>
+                <p>
+                    One of
+                    <code>@Around</code>,
+                    <code>@Before</code>,
+                    <code>@After</code>,
+                    <code>@AfterFinally</code>,
+                    <code>@AfterReturning</code> or
+                    <code>@AfterThrowing</code>
+                    annotations needs to be is specified.
+                    For details see the
+                    <a href="#Advice">Advice</a> section.
+                </p>
+                <p>
+                    <b>Source sample</b>
+                </p>
+                <p>
+                    The following source sample gives the main ideas of the annotation defined Aspect.
+
+                </p>
+                <p>
+                    <b>Java 5 annotations</b>
+                <source><![CDATA[
+@Aspect("perInstance")
+public class MyAspect {
+
+    @Introduce("within(com.mypackage.*)")
+    MarkerInterface anIntroduction;
+
+    @Expression("execution(* com.mypackage.Target.*(..))")
+    Pointcut pc1;
+
+    @Around("pc1")
+    public Object advice1(final JoinPoint joinPoint) throws Throwable {
+        // do some stuff
+        Object result = joinPoint.proceed();
+        // do some other stuff
+        return result;
+    }
+
+     @Around("call(* com.mypackage.Target.*(..))")
+    public Object advice2(final JoinPoint joinPoint) throws Throwable {
+        // do some stuff
+        Object result = joinPoint.proceed();
+        // do some other stuff
+        return result;
+    }
+
+    @Mixin("within(com.mypackage..*)")
+    public static class MyIntroduction extends SuperMixin implements ContractualInterface {
+        ... // introduced methods and fields
+    }
+}
+                        ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotations</b>
+                <source><![CDATA[
+/**
+ * @Aspect("perInstance")
+ */
+public class MyAspect {
+
+    /**
+     * @Introduce("within(com.mypackage.*)")
+     */
+    MarkerInterface anIntroduction;
+
+    /**
+     * @Expression("execution(* com.mypackage.Target.*(..))")
+     */
+    Pointcut pc1;
+
+    /**
+     * @Around("pc1")
+     */
+    public Object advice1(final JoinPoint joinPoint) throws Throwable {
+        // do some stuff
+        Object result = joinPoint.proceed();
+        // do some other stuff
+        return result;
+    }
+
+    /**
+     * @Around("call(* com.mypackage.Target.*(..))")
+     */
+    public Object advice2(final JoinPoint joinPoint) throws Throwable {
+        // do some stuff
+        Object result = joinPoint.proceed();
+        // do some other stuff
+        return result;
+    }
+
+    /**
+     * @Mixin("within(com.mypackage..*)")
+     */
+    public static class MyIntroduction extends SuperMixin implements ContractualInterface {
+        ... // introduced methods and fields
+    }
+}
+                        ]]></source>
+                </p>
+            </subsection>
+            <subsection name="Introduction definition">
+                <p>
+                    In the aspect class you specify the introduction to add as field for <i>interface introduction</i>
+                    (marker interface with no required method)
+                    or as public inner-class for <i>mixins</i>.
+                </p>
+                <p>
+                    Interface introduction are added by adding a field to the aspect. The field type has to be the
+                    interface that you want to introduce. The
+                    <code>@Introduce</code> annotation is then used to specify
+                    the pattern matching the classes you want to apply the interface to.
+                    For details see the
+                    <a href="#Introductions">Introductions</a> section.
+                </p>
+                <p>
+                    Interface introduction with implementation, also known as mixins, are added by adding a public
+                    static inner-class to the aspect class.
+                    For details see the <a href="#Introductions">Introductions</a> section.
+                </p>
+            </subsection>
+        </section>
+        <section name="Pointcuts">
+            <p>
+                The
+                <code>Pointcut</code> class implements the pointcut concept.
+                A Pointcut picks out join points, i.e. selects well-defined points in the program flow.
+            </p>
+            <p>
+                This section describes how to define named pointcuts using annotations, for a detailed description on how
+                pointcuts are written and composed see the
+                <a href="definition_issues.html#Pointcut definition">Pointcut definition</a> and
+                <a href="definition_issues.html#Pointcut composition">Pointcut composition</a> sections.
+            </p>
+            <p>
+                Named pointcuts are defined as fields in the Aspect class, or as method if they have a signature
+                (that is using the
+                <code>args()</code> selector), and they have to follow the following requirements:
+                <ol>
+                    <li>
+                        If defined as a field, the field is of type
+                        <code>org.codehaus.aspectwerkz.definition.Pointcut</code> and should be
+                        declared in the aspect class or hierarchy.
+                    </li>
+                    <br/>
+                    <li>
+                        The
+                        <code>@Expression</code> annotation allows us to define the type and pattern of the pointcut.
+                        There can be a composition, whether or not anonymous like in
+                        <code>@Expression("anExpression OR call(&lt;call pattern&gt;)")</code>
+                    </li>
+                    <br/>
+                    <li>
+                        If using the
+                        <code>args()</code> selector, the pointcut is defined as a method. The return type
+                        of the method does not matter, but the signature must conform to the
+                        <code>args()</code> selector
+                        (see samples below).
+                    </li>
+                    <br/>
+                    <li>
+                        The name of the pointcut must be unique - that is its signature does not allow to differenciate
+                        to pointcut defined as method. The methods names must differ.
+                    </li>
+                </ol>
+            </p>
+            <p>
+                The name of the pointcut is the field name if a field, or the method name if a method.
+            </p>
+            <p>
+                <b>Java 5 annotations</b>
+                <source><![CDATA[
+    //-- defined as fields
+
+    @Expression("execution(* com.package..*.*(..))")
+    Poincut allMethods;
+
+    @Expression("set(* com.package.Constants.*)")
+    Pointcut allConstantAccess;
+
+    //-- defined as methods
+
+    @Expression("execution(* com.package..*.*(..)) && args(s)")
+    Poincut allMethodsWithStringArg(String s) {return null;}
+
+    @Expression("execution(* com.package..*.*(..)) && args(i, s, String ..)")
+    void allMethodsWithIntArgTwoStringArgsAndSomeOtherArgs(int i, String s) {}
+                    ]]></source>
+            </p>
+            <p>
+                <b>JavaDoc annotations</b>
+                <source><![CDATA[
+    //-- defined as fields
+
+    /**
+     * @Expression("execution(* com.package..*.*(..))")
+     */
+    Poincut allMethods;
+
+    /**
+     * @Expression("set(* com.package.Constants.*)")
+     */
+    Pointcut allConstantAccess;
+
+    //-- defined as methods
+
+    /**
+     * @Expression("execution(* com.package..*.*(..)) && args(s)")
+     */
+    Poincut allMethodsWithStringArg(String s) {return null;}
+
+    /**
+     * @Expression("execution(* com.package..*.*(..)) && args(i, s, String ..)")
+     */
+    void allMethodsWithIntArgTwoStringArgsAndSomeOtherArgs(int i, String s) {}
+                    ]]></source>
+            </p>
+        </section>
+        <section name="Advice">
+            <p>
+                The advice are implemented as regular methods in the Aspect class with the following requirements:
+                <ol>
+                    <li>
+                        The signature of the method is
+                        <code>public Object &lt;name of method&gt;(JoinPoint joinPoint) throws Throwable</code>
+                        (the public modifier is not mandatory, choose according to your needs)
+                        <b>unless...</b>
+                    </li>
+                    <ul>
+                        <li>
+                            The advice is bounded to a pointcut with signature (
+                            <code>args()</code>). In such a case, the
+                            parameter referenced in the pointcut signature must appear in the advice signature.
+                            The JoinPoint parameter must appear although not referenced by the pointcut signature.
+                            We can thus have any signature.
+                        </li>
+                        <br/>
+                        <li>
+                            The method has a metadata that specifies the advice type and the matching joinpoints through a pointcut expression.
+                            The matching joinpoints are whether defined as an anonymous pointcut (and not a as a field)
+                            whether as an algebraic expression composed by other poincuts, whose type matches the advice type.
+                            <br/>
+                            If the expression is referencing a pointcut with a signature, then the parameters names as defined
+                            in the method signature must be passed to it.
+                        </li>
+                        <br/>
+                    </ul>
+                </ol>
+            </p>
+            <p>
+                    The supported types of advice are the following.
+                <ul>
+                    <li>
+                        <code>@Around &lt;poincut expression&gt;</code> - is invoked "around" the
+                            join point. Can be used to intercept method invocations on the 'callee' side.
+                    </li>
+                    <br/>
+                    <li>
+                        <code>@Before &lt;poincut expression&gt;</code> - is invoked before the join
+                            point. Can be used for advising fields or method invocations on the 'caller' side.
+                    </li>
+                    <br/>
+                    <li>
+                        <code>@After &lt;poincut expression&gt;</code> - is invoked after the join
+                            point. Can be used for advising fields or method invocations on the 'caller' side.
+                    </li>
+                    <br/>
+                    <li>
+								<code>@AfterFinally &lt;poincut expression&gt;</code> - same as @After (invoked after the join point).
+								<br/>
+								See <a href="new_features_in_2_0.html#after_finally__after_">details</a>.
+                    </li>
+                    <br/>
+                    <li>
+								<code>@AfterReturning &lt;poincut expression&gt;</code> - is invoked after a method normal return (no exception
+								thrown)
+								<br/>
+								See <a href="new_features_in_2_0.html#after_returning__TYPE_">details</a>.
+                    </li>
+                    <br/>
+                    <li>
+								<code>@AfterThrowing &lt;poincut expression&gt;</code> - is invoked after a method return with an exception.
+								<br/>
+								See <a href="new_features_in_2_0.html#after_throwing__TYPE_">details</a>.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                    Both anonymous pointcut expressions and expressions made out of named pointcuts are supported. See
+                    example below.
+            </p>
+            <p>
+                Here is a simple example of an
+                <code>Around</code> advice using Java 5 annotation style, the definition would be the same using
+                JavaDoc annotations. (For more examples see the
+                <a href="examples_2.html">Examples</a> section.)
+            </p>
+            <p>
+                <b>Java 5 annotations</b>
+                <source><![CDATA[
+    //-- no arguments, JoinPoint is implictly mandatory
+
+    /**
+     * Non-anonymous expression (pc1 and pc2 are fields of type Pointcut with metadata).
+     */
+    @Around("pc1 && pc2")
+    public Object myAroundAdvice1(StaticJoinPoint joinPoint) throws Throwable {
+        // do some stuff
+        Object result = joinPoint.proceed();
+        // do some more stuff
+        return result;
+    }
+
+    /**
+     * Anonymous pointcuts.
+     */
+    @Around("execution(* com.package.Target.*(..)) || call(* com.package.Target.*(..))")
+    public Object myAroundAdvice2(StaticJoinPoint joinPoint) throws Throwable {
+        // do some stuff
+        Object result = joinPoint.proceed();
+        // do some more stuff
+        return result;
+    }
+
+    //-- pointcut with signatures
+
+    /**
+     * Non-anonymous expression (pc1 is a method defining a Pointcut, with a String parameter).
+     * Note the use of "s" in the metadata expression.
+     */
+    @Around("pc1(s)")
+    public Object myAroundAdvice1WithArg(StaticJoinPoint joinPoint, String s) throws Throwable {
+        // do some stuff
+        // "s" can be accessed without the use of RTTI
+        // Note that it can be modified according to the rules of Java Language references passing
+        System.out.println(s);
+        Object result = joinPoint.proceed();
+        // do some more stuff
+        return result;
+    }
+
+    /**
+     * Anonymous pointcuts.
+     */
+    @Around("execution(* com.package.Target.*(..)) && args(arg0, int[][], arg2)")
+    public Object myAroundAdvice2WithArg(StaticJoinPoint joinPoint, String arg0, com.Foo arg2) throws Throwable {
+        // do some stuff
+        // access arg0, arg2
+        arg2.doSomething();
+        Object result = joinPoint.proceed();
+        // do some more stuff
+        return result;
+    }
+                    ]]></source>
+            </p>
+        </section>
+        <section name="Introductions">
+            <p>
+                <code>AspectWerkz</code> supports two types of <i>introductions</i>
+                <ul>
+                    <li>
+                        Mixins - are separated from the aspect concept. They can be declared within an or
+                        outside of an aspect
+                    </li>
+                    <li>
+                        Interface introductions - can only be declared within an aspect
+                    </li>
+                </ul>
+            </p>
+            <p>
+               Using annotations, introductions are defined as:
+                <ul>
+                    <li>Fields of the aspect class whose type is the interface to introduce.
+                        <br/>
+                        Use interface introductions only if the interface does not require any implementation (marker interface).
+                        <br/>
+                        Fields are marked with the annotation
+                        <code>@Introduce &lt;pointcut&gt;</code>, where pointcut is composed
+                        with within, hasfield, hasmethod.
+                    </li>
+                    <br/>
+                    <li>Public inner class of the aspect class.
+                        <br/>
+                        The inner class declares to implement the interface(s) to introduce and effectively implements it.
+                        The inner class is marked with the annotation 
+                        <code>@Mixin &lt;pointcut&gt;</code>, where pointcut is composed
+                        with within, hasField, hasMethod.
+                    </li>
+                </ul>
+            </p>
+            <subsection name="Interface introductions">
+                <p>
+                    Interface introductions (introduction of marker interfaces) are defined as fields in the aspect class.
+                    The type of the field is the interface to introduce.
+                    <br/>
+                    The field is marked with the annotation
+                    <code>@Introduce &lt;pointcut&gt;</code> to specify to which
+                    classes the introduction applies.
+                    <br/>
+                    The introduction type is the field type.
+                </p>
+                <p>
+                    When using abstract aspects or aspect inheritance, the aspect's super class can define interface
+                    introductions without specifying a
+                    <code>@Introduce &lt;pointcut&gt;</code> metadata.
+                    The concrete aspect should thus override the fields and specify the metadata defining to which
+                    classes the introduction applies.
+                </p>
+
+                <p>
+                    <b>Java 5 annotations</b>
+                    <source><![CDATA[
+    @Introduce("within(com.package.*)")
+    protected Serializable introduction1;
+
+    @Introduce("within(com.package.*)")
+    public OtherMarkerInterface introduction2;
+                    ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotations</b>
+                    <source><![CDATA[
+    /**
+     * @Introduce("within(com.package.*)")
+     */
+    protected Serializable introduction1;
+
+    /**
+     * @Introduce("within(com.package.*)")
+     */
+    public OtherMarkerInterface introduction2;
+                    ]]></source>
+                </p>
+            </subsection>
+            <subsection name="Mixins">
+                <p>
+                    For details on the mixin implementation and definition see
+                    <a href="implementation.html#Mixins">this section</a>.
+                </p>
+            </subsection>
+        </section>
+        <section name="Annotation reference">
+            <p>
+                This section references all annotations used in the annotation definition.
+            </p>
+            <p>
+                <table>
+                    <tr>
+                        <th>Annotations</th>
+                        <th>level</th>
+                        <th>defines</th>
+                        <th>anonymous value</th>
+                        <th>parameter(s)</th>
+                    </tr>
+                    <tr>
+                        <th colspan="5">[O:defaultValue] for optional parameter with default value</th>
+                    </tr>
+                    <tr>
+                        <td>@Aspect</td>
+                        <td>class</td>
+                        <td>Aspect</td>
+                        <td>perJVM | perClass | perInstance [O:perJVM]</td>
+                        <td>name=[0:&lt;aspect class name&gt;]</td>
+                    </tr>
+                    <tr>
+                        <td>@Expression</td>
+                        <td>Pointcut field, method with matching signature</td>
+                        <td>Pointcut, method execution</td>
+                        <td>&lt;pointcut expression&gt;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>@Introduce</td>
+                        <td>field</td>
+                        <td>Interface Introduction</td>
+                        <td>&lt;within/hasfield/hasmethod pointcut (and composition of those)&gt;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>@Mixin</td>
+                        <td>class or inner class</td>
+                        <td>Mixin</td>
+                        <td>&lt;within/hasxxx pointcut&gt;</td>
+                        <td>deploymentModel=(perJVM | perClass | perInstance [O:perInstance]), isTransient=(true | false [O:false])</td>
+                    </tr>
+                    <tr>
+                        <td>@Around</td>
+                        <td>method</td>
+                        <td>around advice</td>
+                        <td>&lt;pointcut expression&gt;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>@Before</td>
+                        <td>method</td>
+                        <td>before advice</td>
+                        <td>&lt;pointcut expression&gt;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>@After</td>
+                        <td>method</td>
+                        <td>after finally advice</td>
+                        <td>&lt;pointcut expression&gt;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>@AfterFinally</td>
+                        <td>method</td>
+                        <td>after finally advice</td>
+                        <td>&lt;pointcut expression&gt;</td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>@AfterReturning</td>
+                        <td>method</td>
+                        <td>after returning advice</td>
+                        <td>&lt;pointcut expression&gt;</td>
+                        <td>the FQN of the return type (optional)</td>
+                    </tr>
+                    <tr>
+                        <td>@AfterThrowing</td>
+                        <td>method</td>
+                        <td>after throwing advice</td>
+                        <td>&lt;pointcut expression&gt;</td>
+                        <td>the FQN of the exception type (optional)</td>
+                    </tr>
+                    <tr>
+                        <td>@&lt;name&gt;</td>
+                        <td>any</td>
+                        <td>custom annotation (typed or untyped)</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </table>
+            </p>
+        </section>
+        <section name="Aspect annotation compilation">
+            <p>
+                JavaDoc annotation defined aspects have to be post-compiled to incorporate the metadata
+                into the class file bytecode.
+                This post-compilation step will not be needed with Java 5 annotation defined aspects.
+                For now you need to first compile
+                the aspect classes with javac compiler and then post compile the
+                <code>.class</code> files with the aspect source code as input.
+            </p>
+            <p>
+                    To post-compile the aspect's
+                <code>.class</code> files you have to use the
+                <code>AnnotationC</code>
+                    compiler, which needs both the regular
+                <code>.class</code> files and the aspect sources files
+                    containing the annotation metadata. You can run the
+                <code>AnnotationC</code> from the command line.
+                    (It might be useful to run the
+                <code>ASPECTWERKZ_HOME/bin/setEnv.{bat|sh}</code> script first.)
+            </p>
+                You invoke the compiler like this:
+            <source><![CDATA[
+java [options...] org.codehaus.aspectwerkz.annotation.AnnotationC
+    -src <path to src dirs>
+    -srcpath <list of files>
+    -srcincludes <path to file>
+    -dest <path to destination dir>
+    -custom <property file for cutom annotations>
+    -verbose
+            ]]></source>
+            <p>
+                <b>Description of compiler options</b>
+            </p>
+            <p>
+                 Note: only one of <code>-src</code>, <code>-srcpath</code> and <code>-srcincludes</code> may be used.
+                <ul>
+                    <li>
+                        <code>-verbose</code> - (optional) activates compilation status information
+                    </li>
+                    <br/>
+                    <li>
+                        <code>-src &lt;path to src dirs&gt;</code> - provides the list of source directories separated
+                            by File.pathSeparator
+                    </li>
+                    <br/>
+                    <li>
+                        <code>-srcpath &lt;list of files&gt;</code> - provides a comma separated list of source files
+                    </li>
+                    <br/>
+                    <li>
+                        <code>-srcincludes &lt;path to file&gt;</code> - provides the path to a file containing the list
+                        of source files (one name per line)
+                    </li>
+                    <br/>
+                    <li>
+                        <code>-dest &lt;path to destination dir&gt;</code> - (optional) if omitted the compiled
+                        classes will be written to the initial directory
+                    </li>
+                    <br/>
+                    <li>
+                        <code>-custom &lt;property file for cutom annotations&gt;</code> - (optional) only needed
+                        if you have custom annotations you want to compile
+                    </li>
+                </ul>
+            </p>
+            <p>
+                <code>AnnotationC</code> can also be used to handle custom annotations as described
+                <a href="annotations.html#Compiling_Annotations">here</a>.
+            </p>
+            <p>
+                Note that if you are using the
+                <code>-dest</code> option, the anonymous inner classes will not be copied to
+                the destination directory, since the anonymous classes are not taken into account by the Annotation compiler.
+                In such a case it is recommanded to add the following (if using Ant) just after the call to AnnotationC
+                when the
+                <code>-dest</code> option is used: (adapt according to the directories you are using)
+                <br/>
+                <![CDATA[
+<copy todir="classes/annotated" overwrite="false">
+    <fileset dir="classes/regular"/>
+</copy>
+                ]]>
+            </p>
+            <subsection name="AnnotationC Ant task" >
+                <p>
+                    We also have an <i>Ant</i> task for the AnnotationC compiler.
+                </p>
+                <p>
+                    For details see this <a href="annotations.html#Ant_task_for_compiling_Annotations">this section</a>.
+                </p>
+            </subsection>
+        </section>
+
+        <section name="XML deployment descriptor">
+            <p>
+                The deployment descriptor is needed for the runtime system to know which aspects it should load.
+                It always has to be specified even though all definition is made in annotations.
+            </p>
+            <p>
+               Example:
+            </p>
+            <source><![CDATA[
+<aspectwerkz>
+    <system id="tests">
+        <package name="foo.bar">
+            <aspect class="MyAspect1"/>
+            <aspect class="MyAspect2"/>
+            ...
+        </package>
+    </system>
+</aspectwerkz>
+            ]]></source>
+        </section>
+    </body>
+</document>

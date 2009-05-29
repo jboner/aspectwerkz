@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<document>
+    <properties>
+        <title>Testimonials</title>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+    </properties>
+    <body>
+        <section name="Testimonials">
+            <subsection name="Multimedia Caf&#233;: commercial usage">
+                <p>
+                    "Multimedia Caf&#233; (www.mmcafe.com.br) is a web development company
+                    located in São Paulo, Brazil. Multimedia Caf&#233; started in 1996,
+                    and since its inception, it's been doing
+                    <!--                    innovative and award-winning -->
+                    projects for companies such as Citibank, Parmalat,
+                    HP, Motorola and Toyota. In the new version of its
+                    <!--                    widely recognized -->
+                    content management product, mmPublish, Multimedia Caf&#233;
+                    and Bluebox Technologies (www.bluebox.com.br) partnered to create
+                    <!--                    a jaw-dropping --> a new
+                    Portal Management System, and AspectWerkz is being
+                    used everywhere: from the plug-in architecture to security,
+                    caching, persistence, content management, indexing, aggregation,
+                    syndication and segregation, with outstanding success, even within
+                    a very tight schedule."
+                </p>
+                <p>
+                    "Our mission was to deliver a completely outstanding and
+                    revolutionary architecture, packed with cool features, to
+                    Multimedia Caf&#233;. When we found AspectWerkz, we thought:
+                    'that's it!', and started working right away. After reading the
+                    documentation and playing with it for a while, we had a prototype
+                    for mmPublish 3's core services running in just a few days.
+                    Thanks to AspectWerkz's practical approach, Aspect-Orientation
+                    was made so easy and straight-forward that we could teach it to
+                    beginner programmers in a couple of hours, and got an impressive
+                    productivity boost."
+                </p>
+                <p>
+                    - Carlos Villela, lead architect for the 3.0 version of
+                    mmPublish, Bluebox Technologies
+                </p>
+            </subsection>
+            <subsection name="AspectWerkz: aspects done right">
+                <p>
+                    "I believe a new evolutionary step in the history of
+                    Aspect-Oriented Programming has been reached with AspectWerkz,
+                    from Jonas Bon&#233;r. When I read the documentation for the first
+                    time, I was already struck how simple and straightforward
+                    everything is with AspectWerkz. Don't be mistaken:
+                    the software covers all the known features of AOP as it is
+                    defined today (advice, pointcuts, introductions, runtime modes,
+                    etc...) but what is striking is how everything fits nicely
+                    together with a simple XML definition file."
+                </p>
+                <p>
+                    "Keep an eye on AspectWerkz, I believe it will soon become a
+                    major player in the AOP world."
+                </p>
+                <p>
+                    -
+                    <a href="http://www.freeroller.net/page/cbeust/20030409#aspectwerks_aspects_done_right">C&#233;dric Beust</a>
+                </p>
+            </subsection>
+            <subsection name="And The Winner of the AOP Wars is..">
+                <p>
+                    So drum roll please, the winner in the AOP wars is none other than...AspectWerkz!
+                </p>
+                <p>
+                    Uncanny mastery of the subject matter, comprehensive functionality,
+                    impressive performance and most of all excellent documentation.
+                    For all other AOP pretenders please pay your respects to the master, Jonas BonŽr!
+                </p>
+                <p>
+                    -
+                    <a href="http://www.freeroller.net/page/ceperez/20030620#and_the_winner_of_the">Carlos E. Perez</a>
+                </p>
+            </subsection>
+            <subsection name="Aspects are now usable">
+                <p>
+                    "A new software package Aspectwerkz looks like it might really
+                    bring Aspects to Java for good (if Xerox doesn't mind)."
+                </p>
+                <p>
+                    "Well, I definitely was skeptical at first, but after reading
+                    <a href="http://www.freeroller.net/page/cbeust/20030409#aspectwerks_aspects_done_right">C&#233;dric's</a>
+                    post on this I have to say I am very impressed.
+                    Aspects seemed like they would confuse more developers than
+                    help given the complicated implementations that I have seen.
+                    This package though is amazing and leverages all the software
+                    the open source community has to give."
+                </p>
+                <p>
+                    -
+                    <a href="http://homepage.mac.com/spullara/rants/C1464297901/E1986247138/index.html">Sam Pullara</a>
+                </p>
+            </subsection>
+            <subsection name="AspectWerkz is impressive">
+                <p>
+                    "AspectWerks is the new kid on the java AOP block. The brain
+                    child of the obviously talented Jonas Bon&#233;r, I've been
+                    completely blown away by both it's power and simplicity."
+                </p>
+                <p>
+                    "Go on, check it out, I know you want to :)"
+                </p>
+                <p>
+                    -
+                    <a href="http://www.rocketred.com.au/blogs/kevin/archives/2003_04_07.html#000157">Kevin O'Neill</a>
+                </p>
+            </subsection>
+        </section>
+    </body>
+</document>
+

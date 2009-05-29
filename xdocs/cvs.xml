@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <title>CVS</title>
+    </properties>
+    <body>
+        <section name="Browse the CVS">
+            <p>
+                <a href="http://cvs.aspectwerkz.codehaus.org/">http://cvs.aspectwerkz.codehaus.org/</a>
+            </p>
+        </section>
+        <section name="Anonymous CVS Access">
+            <p>
+                Note: CVS has been migrated on 2004 June, 5th. Make sure to update your own tools with the following
+                information.
+                <br/>
+            </p>
+            <p>
+                <pre>
+    cvs -d :pserver:anonymous@cvs.aspectwerkz.codehaus.org:/home/projects/aspectwerkz/scm login
+
+    cvs -z3 -d :pserver:anonymous@cvs.aspectwerkz.codehaus.org:/home/projects/aspectwerkz/scm co aspectwerkz4
+                </pre>
+                Updates from within the module's directory do not need the -d parameter.
+            </p>
+        </section>
+        <section name="Developer CVS Access via SSH">
+            <p>
+                Only project developers can access the CVS tree via this method.
+                SSH2 must be installed on your client machine. Substitute
+                <b>developername</b>
+                with the proper value. Enter your site password when prompted.
+                <pre>
+    export CVS_RSH=ssh
+
+    cvs -z3 -d :pserver:developername@cvs.aspectwerkz.codehaus.org:/home/projects/aspectwerkz/scm co aspectwerkz4
+                </pre>
+            </p>
+        </section>
+
+    </body>
+
+</document>
+

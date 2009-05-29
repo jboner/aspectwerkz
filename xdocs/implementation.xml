@@ -1,0 +1,986 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <author email="alex at gnilux dot com">alexandre vasseur</author>
+        <title>Implementation issues</title>
+    </properties>
+    <body>
+
+        <section name="Table of Contents">
+            <p>
+                <b>Implementation issues</b>
+            </p>
+            <p>
+                This section documents the programming model for Aspects, Advice and Mixins
+                in AspectWerkz.
+            </p>
+            <p>
+                <ol>
+                    <li>
+                        <a href="#Aspects">Aspect models</a>
+                    </li>
+                    <li>
+                        <a href="#Advice">Advice</a>
+                    </li>
+                    <li>
+                        <a href="#After advice semantics">After advice semantics</a>
+                    </li>
+                    <li>
+                        <a href="#JoinPoint instance">JoinPoint instance</a>
+                    </li>
+                    <li>
+                        <a href="#StaticJoinPoint, JoinPoint, EnclosingStaticJoinPoint">StaticJoinPoint, JoinPoint, EnclosingStaticJoinPoint</a>
+                    </li>
+                    <li>
+                        <a href="#Signature interfaces">Signature interfaces</a>
+                    </li>
+                    <li>
+                        <a href="#RTTI interfaces">RTTI interfaces</a>
+                    </li>
+                    <li>
+                        <a href="#Using the AspectContext class">Using the AspectContext class</a>
+                    </li>
+                    <li>
+                        <a href="#Mixins">Mixins</a>
+                    </li>
+                    <li>
+                        <a href="#Retrieval of Aspect instances">Retrieval of Aspect instances</a>
+                    </li>
+                    <li>
+                        <a href="#Example of an Aspect">Example of an Aspect</a>
+                    </li>
+                    <li>
+                        <a href="#Choosing a definition model">Choosing a definition model</a>
+                    </li>
+                </ol>
+            </p>
+        </section>
+        <section name="Aspects">
+            <p>
+                In
+                <code>AspectWerkz</code> any Java class can be an aspect (or more conceptually correct, can
+                be defined to be
+                <i>cross-cutting</i>), which means that it will become a unit of modularity
+                for crosscutting concerns.
+            </p>
+            <p>
+                They do not have to extend any special class or implement a specific interface, but can extend any
+                class they want.
+            </p>
+            <p>
+                The only requirement is that the aspect needs to have either
+                <b>no</b> constructor at all
+                (meaning implicitly a default one)
+                <b>or</b> one of these two different constructors defined:
+                <ul>
+                    <li>
+                        a default no-argument constructor - only needed if the aspect has other constructors that
+                        takes parameters (apart from the one below if defined)
+                    </li>
+                    <br/>
+                    <li>
+                        a constructor that takes a
+                        <code>org.codehaus.aspectwerkz.AspectContext</code> instance
+                        as its only parameter - this is needed if you want to retrieve information about the runtime
+                        system, access parameters defined at deployment time, access meta-data etc.
+                        See
+                        <a href="#Using the AspectContext class">Using the AspectContext class</a> section
+                        for details.
+                    </li>
+                    <br/>
+                </ul>
+                <code>AspectWerkz</code> will try to use firstly the constructor of type 2. If not found than the default
+                constructor will be used. If no default constructor is found then an exception is thrown.
+            </p>
+            <p>
+                The aspect can then be defined using XML or annotations, see the
+                <a href="xml_definition.html">XML definition</a> section or the
+                <a href="attribute_definition.html">Annotation definition</a> section for more information.
+            </p>
+            <subsection name="Abstract aspects - aspect inheritance">
+                <p>
+                    Since the Aspects are pure Java classes, you have the possibility of
+                    defining abstract aspects that you can reuse by implementing another aspect
+                    that inherits the abstract aspect.
+                </p>
+                <p>
+                    Aspect inheritance is exactly regular class inheritance. An abstract aspect
+                    is defined using the
+                    <code>abstract</code> keyword as a regular abstract class and is inherited
+                    using the
+                    <code>extends</code> keyword.
+                </p>
+                <p>
+                    Nevertheless specific rules must be observed for advices represented as methods. Indeed, the advice
+                    is likely to be invoked from the class it is applied to as a result of the weaving process.
+                    Advices should thus be public. Private or protected advices are not supported. Package private advices
+                    are not encouraged. Aspects classes should for the same purpose be public (or package private
+                    though not encouraged).
+                </p>
+            </subsection>
+        </section>
+        <section name="Advice">
+            <p>
+                    In the aspect class the advices are regular methods. The methods needs to conform to a specific signature
+                    unless
+                <code>args()</code>, <code>this()</code> and/or <code>target()</code> selectors are used in the pointcut 
+					 the advice is bounded to.
+                <ul>
+                    <li>
+                            For
+                        <code>Around</code> advice:
+                        <br/>
+                        <code>public Object &lt;name of method&gt;(StaticJoinPoint staticJoinPoint) throws Throwable</code> signature.
+                        <br/>
+                        <code>public Object &lt;name of method&gt;(JoinPoint joinPoint) throws Throwable</code> signature.
+                    </li>
+                    <br/>
+                    <li>
+                            For
+                        <code>Before</code>,
+                        <code>After</code>,
+                        <code>After Finally</code>,
+                        <code>After Returning (TYPE)</code> and
+                        <code>After Throwing (TYPE)</code>
+                        advice:
+                        <br/>
+                        <code>public void &lt;name of method&gt;()</code> signature.
+                        <br/>
+                        <code>public void &lt;name of method&gt;(StaticJoinPoint staticJoinPoint)</code> signature.
+                        <br/>
+                        <code>public void &lt;name of method&gt;(JoinPoint joinPoint)</code> signature.
+                    </li>
+                </ul>
+                    The advice can then be defined using XML or annotations, see the
+                <a href="xml_definition.html">XML definition</a> section or the
+                <a href="attribute_definition.html">Annotation definition</a> section for more information.
+            </p>
+            <p>
+                Using StaticJoinPoint, JoinPoint or no JoinPoint at all is discussed in
+                <a href="#StaticJoinPoint, JoinPoint, EnclosingStaticJoinPoint">this section</a>.
+            </p>
+            <p>
+                    Here is a simple example of an
+                <code>Around</code> advice. (For more examples see the
+                <a href="examples_2.html">Examples section</a>.) The
+                <code>JoinPoint</code> object that is passed to
+                    the method contains metadata and RTTI of the current
+                    join point. To invoke the next advice in the chain (or the target method if there are no more advice)
+                    simply call
+                <code>joinPoint.proceed()</code> which will return the result from the next advice (or the target method).
+            </p>
+            <p>
+                <source><![CDATA[
+@Around("myPointcut")
+public Object myAroundAdvice(JoinPoint joinPoint) throws Throwable {
+    // do some stuff
+    Object result = joinPoint.proceed();
+    // do some more stuff
+    return result;
+}
+            ]]></source>
+            </p>
+            <p>
+                Note: for such a simple advice, StaticJoinPoint and staticJoinPoint.proceed() would be preferable.
+            </p>
+            <p>
+
+            </p>
+            <p>
+                When using pointcut designators like args(..), this(..), target(..), or when using after returning or after throwing
+                with a type binding, advice signature will be pointcut dependant. 
+                This allows to gain direct access to the advised method/constructor/field set arguments.
+                The Pointcut declaration itself will have a specific signature. The bounded advice(s) is then required to have those
+                parameters in their signature as well. This allows to avoid using the RTTI interface as well as providing strong typing and
+                implies better performance.
+            </p>
+            <p>
+                Such an advice can be defined through Annotations and through XML. See the
+                <a href="xml_definition.html">XML definition</a> section or the
+                <a href="attribute_definition.html">Annotation definition</a> section for more information.
+            </p>
+            <p>
+                The advice signature is thus depending on the pointcut signature and the use of JoinPoint, StaticJoinPoint, user defined JoinPoint or not use of it at all.
+                A sample could look like the following:
+                <source><![CDATA[
+// will match all method named "log" with a "java.lang.String" as sole parameter
+@Expression("execution(* log(..)) AND args(s)")
+Pointcut myPointcut(String s) {return null;}
+
+@Before("myPointcut(adviceArg)")
+public void myBeforeAdvice(JoinPoint joinPoint, String adviceArg) {...}
+
+// it is possible to have the JoinPoint at any index in the advice parameter list
+// though a best practice is to keep it at the first position
+@Around("myPointcut(adviceArg)")
+public Object myAroundAdvice(String adviceArg, StaticJoinPoint joinPoint) {... joinPoint.proceed(); ...}
+
+// user defined JoinPoint (could extend StaticJoinPoint as well)
+static interface MyJoinPoint extends JoinPoint {
+   Object proceed(String adviceArgIdLikeToChange);
+}
+@Around("myPointcut(adviceArg)")
+public Object myAroundAdvice(MyJoinPoint myJoinPoint) {
+   ...
+   myJoinPoint.proceed("new value !!");
+   ...
+}
+
+
+@After("myPointcut(adviceArg)")
+public void myAfterAdvice(JoinPoint joinPoint, String adviceArg) {...}
+                ]]></source>
+            </p>
+        </section>
+
+        <section name="After advice semantics">
+            <p>
+                In previous releases of
+                <code>AspectWerkz</code>, we only supported one single type of
+                <i>after advice</i>. The semantics of this type was that it was always executed, regardless
+                of whether an exception had been thrown or if the method returned successfully.
+            </p>
+            <p>
+                In the new 2.x architecture we have enhanced the semantics for this type of advice and have
+                borrowed the semantics from
+                <code>AspectJ</code>. So now we support three different types
+                of
+                <i>after advice</i>:
+                <ul>
+                    <li>
+                        <code>@AfterFinally</code> (same as
+                        <code>@After</code>)
+                    </li>
+                    <li>
+                        <code>@AfterReturning [TYPE]</code> -
+                        <code>@AfterReturing(pointcut)</code> or
+                        <code>@AfterReturning(type=onReturnedType, pointcut=pointcut)</code>
+                    </li>
+                    <li>
+                        <code>@AfterThrowing [TYPE]</code> -
+                        <code>@AfterThrowing(pointcut)</code> or
+                        <code>@AfterThrowing(type=onThrownedType, pointcut=pointcut))</code>
+                    </li>
+                </ul>
+            </p>
+            <subsection name="after finally (after)">
+                <p>
+                    An
+                    <code>after finally</code> advice declaration has the same semantics as an
+                    <code>after</code> advice declaration, you can use any syntax you like.
+                </p>
+                <p>
+                    <code>after finally</code> advice are always executed, they work the same as a finally block
+						  (meaning that they will be invoked regardless of wheter an exception has been thrown or if the
+                    method has returned successfully).
+                </p>
+                <p>
+                    <b>Java 5 annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+@AfterFinally("execution(@TransactionAttribute * *.*(..))")
+public void logTxMethods(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+/**
+ * @AfterFinally("execution(@TransactionAttribute * *.*(..))")
+ */
+public void logTxMethods(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>XML definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+<advice type="after finally"
+        bind-to="execution(@TransactionAttribute * *.*(..))"
+        name="logTxMethods"/>
+                    ]]></source>
+                </p>
+            </subsection>
+            <subsection name="after returning [TYPE]">
+                <p>
+                    <code>after returning [TYPE]</code> advice are executed if the method returns normally (without
+                    throwing an exception)
+                    <b>and</b> the actual type that is returned is of the type that is specified
+                    in the advice declaration.
+                </p>
+                <p>
+                    If no return type is specified then it applies to all invocations that return normally, e.g. not
+                    when throwing an exception.
+                </p>
+                <p>
+                    <b>Java 5 annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+@AfterReturning(
+    type="@Service *..*",
+    pointcut="execution(@TransactionAttribute * *.*(..)"
+)
+public void txCommitReturningService(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+/**
+ * @AfterReturning(
+ *      type="@Service *..*",
+ *      pointcut="execution(@TransactionAttribute * *.*(..)"
+ * )
+ */
+public void txCommitReturningService(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>XML definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+<advice type="after returning(@Service *..*)"
+        bind-to="execution(@TransactionAttribute * *.*(..))"
+        name="txCommitReturningService"/>
+                    ]]></source>
+                </p>
+            </subsection>
+            <subsection name="after throwing [TYPE]">
+            	<p>
+            		<code>after throwing [TYPE]</code> advice is executed if the advised method
+            		returns with an exception and the actual type of the exception that was thrown
+            		is of the type that is specified in the advice declaration.
+            	</p>
+                <p>
+                    If no exception type is specified then it applies to all invocations that return with
+                    an exception.
+                </p>
+                <p>
+                    <b>Java 5 annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+@AfterThrowing(
+    type="RuntimeException",
+    pointcut="execution(@TransactionAttribute * *.*(..)"
+)
+public void txRollbackOnRuntimeException(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+/**
+ * @AfterThrowing(
+ *    type="RuntimeException",
+ *    pointcut="execution(@TransactionAttribute * *.*(..)"
+ * )
+ */
+public void txRollbackOnRuntimeException(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>XML definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+<advice type="after throwing(RuntimeException)"
+        bind-to="execution(@TransactionAttribute * *.*(..))"
+        name="txRollbackOnRuntimeException"/>
+                    ]]></source>
+                </p>
+            </subsection>
+        </section>
+
+        <section name="JoinPoint instance">
+            <p>
+                Each advice is passed the
+                <code>JoinPoint</code> instance or
+                <code>StaticJoinPoint</code> instance if it requires it. The
+                <code>JoinPoint</code> class implements
+                the join point concept, i.e. a well-defined point in the program flow and provides a reflective access API
+                to it. The
+                <code>StaticJoinPoint</code> class is a lightweight version without the reflective access API which
+                allows for a better performance (at the pros/cons of less genericity).
+            </p>
+            <p>
+                The
+                <code>JoinPoint</code> instance contains static information and RTTI (runtime type information) about the join point we are
+                currently executing over.
+                The
+                <code>StaticJoinPoint</code> instance contains only the static information.
+                The static information (the signature) is retrieved through one of the
+                <a href="#Signature interfaces">Signature interfaces</a> by invoking
+                <code>getSignature()</code>.
+                While the RTTI is retrieved through one of the
+                <a href="#RTTI interfaces">RTTI interfaces</a>
+                by invoking
+                <code>getRtti(), getTarget(), getThis(), getCaller(), getCallee()</code>.
+            </p>
+            <p>
+                The
+                <code>JoinPoint</code> and
+                <code>StaticJoinPoint</code>class have a method called
+                <code>proceed()</code>, this method is used in
+                <code>Around</code> advice to either:
+                <ul>
+                    <li>
+                        Invoke the next advice in the chain.
+                    </li>
+                    <br/>
+                    <li>
+                        Invoke the target join point (if there are no more advice).
+                    </li>
+                </ul>
+                The
+                <code>proceed()</code> method returns the result from the method invocation and in the
+                <code>Around</code> advice you have the option of either returning the value returned from the
+                <code>proceed()</code> method or faking the value and returning something else.
+            </p>
+            <p>
+                The
+                <code>JoinPoint</code> class has some other interesting methods as well, see the JavaDoc for details.
+            </p>
+        </section>
+
+        <section name="StaticJoinPoint, JoinPoint, EnclosingStaticJoinPoint">
+            <p>
+                Advice are methods in aspect class. The method signature must conform to some rules, depending on the pointcut
+                where the advice is bound to, when args(..), this(..) and/or target(..) are used to gain access to join point
+                argument / caller / callee instance.
+            </p>
+            <p>
+                Aside from this pointcut bounded arguments, the advice can have extra arguments of type "JoinPoint" or
+                "StaticJoinPoint", which do not appear in the pointcut. First version of AspectWerkz were supporting only
+                "JoinPoint" as advice argument, and use of "getRtti()" RTTI API was mandatory.
+            </p>
+            <p>
+                In AspectWerkz 2.x, use of "StaticJoinPoint" and/or "JoinPoint" as advice argument is optional and use of
+                it (or no use of it at all) depends on aspect developer decision. Note that for "around" advice, in order to
+                invoke "proceed()" properly, you will need access to either a "StaticJoinPoint" or "JoinPoint" instance).
+            </p>
+            <p>
+                When only "StaticJoinPoint" is used, specific optimizations are used to maximize runtime performance
+                since RTTI access is then guaranteed to not happen.
+                <br/>
+            </p>
+            <p>
+                The following demonstrates legal syntax:
+                <source><![CDATA[
+@Before("execution(* foo.Bar.method(..))")
+void before() {}
+
+@Before("execution(* foo.Bar.method(..))")
+void before(StaticJoinPoint sjp) {}
+
+@Before("execution(* foo.Bar.method(..))")
+void before(JoinPoint jp) {}
+
+@Around("execution(* foo.Bar.method(..))")
+Object around() {
+    // possible but rather useless since then all following advices
+    // in the chain are skipped since proceed() is not called
+    return null;
+}
+
+@Around("execution(* foo.Bar.method(..))")
+Object around(StaticJoinPoint sjp) throws Throwable {
+    return sjp.proceed();
+}
+
+@Around("execution(* foo.Bar.method(..))")
+Object around(JoinPoint jp) throws Throwable {
+    return jp.proceed();
+}
+
+@Around("call(* foo.Bar.method(..)) && args(i, j) && target(bar) && this(caller)")
+Object aroundCallWithBindings(int i, int j, Bar bar, Object caller, StaticJoinPoint sjp) throws Throwable {
+    // no use of RTTI and tedious casting
+    // much better performance
+    bar.method();
+    int localInt = j + i;
+    ...
+    return sjp.proceed();
+}
+
+// use of pointcut composition with argument bindings
+@Expression("execution(* foo.Bar.method(..)) && args(i)")
+void pointcut_1(int i) {}
+
+@Expression("execution(* foo.Bar.method(..)) && target(bar)")
+void pointcut_2(Bar bar) {}
+
+@Around("pointcut_1(myI) && pointcut_2(myBar)")
+Object around(JoinPoint jp, int myI, Bar myBar) throws Throwable {
+    myBar.method();
+    return jp.proceed();
+}
+
+                ]]></source>
+            </p>
+            <p>
+                Since 2.0.RC3, StaticJoinPoint instances (and thus a JoinPoint instances) are exposing the
+                <code>EnclosingStaticJoinPoint</code> instance through the API <code>getEnclosingStaticJoinPoint</code>.
+                It can be usefull especially with call, get, set and handler joinpoints, to capture the enclosing static information
+                ie where the call/get/set/handler occurs.
+            </p>
+
+        </section>
+
+        <section name="Signature interfaces">
+            <p>
+                The
+                <code>Signature</code> interfaces are used for retrieving static information
+                about the join point we are currently executing at. The interfaces form a hierarchy in which you can
+                be both fine-grained and course-grained depending on you needs. Just cast to the appropriate interface.
+            </p>
+            <p>
+                The
+                <code>Signature</code> can be retrieved from the
+                <code>JoinPoint</code> or
+                <code>StaticJoinPoint</code> by invoking
+                the
+                <code>getSignature()</code> method.
+            </p>
+            <p>
+                The interfaces are:
+                <ul>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.Signature</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.MemberSignature</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.CodeSignature</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.MethodSignature</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.ConstructorSignature</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.FieldSignature</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.CatchClauseSignature</code>
+                    </li>
+                </ul>
+                See the JavaDoc for API details.
+            </p>
+        </section>
+        <section name="RTTI interfaces">
+            <p>
+                The
+                <code>Rtti</code> interfaces are used for retrieving RTTI (Runtime Type Information)
+                about the join point we are currently executing at. The interfaces form a hierarchy in which you can
+                be both fine-grained and course-grained depending on you needs. Just cast to the appropriate interface.
+            </p>
+            <p>
+                The
+                <code>RTTI</code> can be retrieved from the
+                <code>JoinPoint</code> by invoking
+                the
+                <code>getRtti()</code> method.
+            </p>
+            <p>
+                The interfaces are:
+                <ul>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.Rtti</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.MemberRtti</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.CodeRtti</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.MethodRtti</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.ConstructorRtti</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.FieldRtti</code>
+                    </li>
+                    <li>
+                        <code>org.codehaus.aspectwerkz.joinpoint.CatchClauseRtti</code>
+                    </li>
+                </ul>
+                See the JavaDoc for API details.
+            </p>
+        </section>
+        <section name="Using the AspectContext class">
+            <p>
+                The
+                <code>AspectContext</code> class provides methods for getting handles to various parts
+                of the system, that can be used for introspection as well as redefinitions of the runtime system.
+            </p>
+            <p>
+                To access the
+                <code>AspectContext</code> in a specific aspect you have to define a
+                constructor that takes one
+                <code>org.codehaus.aspectwerkz.AspectContext</code> as its only
+                parameter. The system will then take care of passing in a
+                <code>AspectContext </code> instance
+                when the aspect is instantiated. This instance you can then use as you wish, store it in
+                a member field etc.
+            </p>
+            <p>
+                This class has many useful methods. For example:
+                <source><![CDATA[
+...
+AspectContainer getContainer()
+
+void setParameter(String name, String value)
+String getParameter(String name)
+
+void setMetaData(Object key, Object value)
+Object getMetaData(Object key)
+
+int getDeploymentModel()
+...
+                ]]></source>
+            </p>
+        </section>
+        <section name="Mixins">
+            <p>
+             We have replaced the old mixin implementation with a completely new and better one.
+             The new implementation mainly gives you two things you did not have before:
+                <ul>
+                    <li>
+                     Serialization of the Mixins -
+                        <br/>
+                     The default behaviour is that the mixins will be serialized along with the target class.
+                     But you have the option of making the mixins
+                        <code>transient</code> (e.g. not serialized with
+                     when the target class is serialized), by setting the
+                        <code>transient=true</code> flag.
+                    </li>
+                    <br/>
+                    <li>
+                     Providing your own factory to control the instantiation of the mixin. This means that you
+                     can plug in any IoC (dependency injection) framework to handle this for you. The custom
+                     factories need only to implement the
+                        <code>org.codehaus.aspectwerkz.aspect.MixinFactory</code>
+                     interface.
+                    </li>
+                </ul>
+            </p>
+            <p>
+             The mixins can be any regular class, which means that it can be a standalone class, an inner class
+             of a regular class or an inner class in your aspect class.
+            </p>
+            <p>
+             Three different
+                <code>deployment models</code> are supported,
+                <code>perJVM</code>,
+                <code>perClass</code> and
+                <code>perInstance</code>.
+                <ul>
+                    <li>
+                        <code>perJVM</code> - means that there will be one mixin per
+                     JVM (like a singleton).
+                    </li>
+                    <li>
+                        <code>perClass</code> - means that there will be one mixin instance per
+                     target class.
+                    </li>
+                    <li>
+                        <code>perInstance</code> - means that there will be one mixin instance per
+                     target instance.
+                    </li>
+                </ul>
+             Note: the
+                <code>perThread</code> deployment model has been left to die in peace. The
+                <code>perJVM</code>
+             deployment model is currently not supported but might come back.
+            </p>
+            <p>
+             If you are using the default factory implementation you have to either provide a no argument constructor
+             or a constructor that takes the:
+                <ul>
+                    <li>
+                     target class as its only parameter - to be used with the
+                        <code>perClass</code> deployment model.
+                    </li>
+                    <li>
+                     target instance as its only parameter - to be used with the
+                        <code>perInstance</code> deployment model.
+                    </li>
+                </ul>
+                The no argument constructor is mandatory with <code>perJVM</code>.
+            </p>
+
+            <subsection name="Annotation definition">
+                <p>
+                 To define the mixin using annotations you have to use the
+                    <code>org.codehaus.aspectwerkz.annotation.Mixin</code> annotation.
+                 If using Java 5 this is an annotation interface (e.g.
+                    <code>@interface</code>) else
+                 (for JavaDoc annotations) it is a regular interface.
+                </p>
+                <p>
+                 This annotation has three different parameters:
+                    <ul>
+                        <li>
+                            <code>expression</code> (can be used as the default anonymous value) - the pointcut expression that is used to pick out the set of classes
+                         to apply this mixin to.
+                        </li>
+                        <li>
+                            <code>deploymentModel</code> (optional) - has to me one of
+                            <code>perJVM</code>,
+                            <code>perClass</code> or
+                            <code>perInstance</code>. If not specified then
+                            <code>perInstance</code> is used.
+                        </li>
+                        <li>
+                            <code>isTransient</code> (optional) - defines the mixin as transient or not. If not
+                         specified then the default is
+                            <code>false</code>, e.g. serializable.
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    <b>Definition using Java 5 annotations</b>
+                    <source><![CDATA[
+ @Mixin("within(*..domain.*)")
+ public class MyMixin { ... }
+
+ @Mixin(
+     pointcut="within(*..domain.*)",
+     deploymentModel="perClass",
+     isTransient=true
+ )
+ public class MyOtherMixin { ... }
+                    ]]></source>
+                </p>
+                <p>
+                    <b>Definition using JavaDoc annotations</b>
+                    <source><![CDATA[
+ /** @Mixin("within(*..domain.*)") */
+ public class MyMixin { ... }
+
+ /**
+  * @Mixin(
+  *   pointcut="within(*..domain.*)",
+  *   deploymentModel="perClass",
+  *   isTransient=true
+  * )
+  */
+ public class MyOtherMixin { ... }
+                    ]]></source>
+                </p>
+            </subsection>
+
+            <subsection name="XML definition">
+                <p>
+                 The XML definition (in the
+                    <code>META-INF/aop.xml</code> file) can be used for
+                 three different purposes:
+                    <ul>
+                        <li>
+                         Only to define which mixins should be used. Similar to how you declare which aspects
+                         should be used.) This can be the option if the mixin is defined in annotations.
+                         Then you only need to use the
+                            <code>class</code> attribute, e.g.
+                            <code>&lt;mixin class="foo.bar.MyMixinImpl"/&gt;</code>. See below for details.
+                        </li>
+                        <li>
+                         To completely define the mixin. See below for all the attributes that can be used.
+                        </li>
+                        <li>
+                         To override and/or resolve the definition made using annotations.
+                         See below for all the attributes that can be used.
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                 To define the mixin using the XML definition, use the
+                    <code>mixin</code> element. It has
+                 five different attributes that can be used:
+                    <ul>
+                        <li>
+                            <code>class</code> (mandatory) - defines which class to use as the implementation class.
+                         Has to be the fully qualified name of the class.
+                        </li>
+                        <li>
+                            <code>deployment-model</code> (optional) - defines the deployment model. Can be one of
+                            <code>perJVM</code>,
+                            <code>perClass</code> or
+                            <code>perInstance</code>.
+                        </li>
+                        <li>
+                            <code>transient</code> (optional) - defines the mixin as
+                            <code>transient</code> or not.
+                        </li>
+                        <li>
+                            <code>factory</code> (optional) - defines the custom mixin factory implementation to use
+                         with the specific mixin.
+                        </li>
+                        <li>
+                            <code>bind-to</code> (optional) - defines to which class set the mixin should be applied to.
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                Example:
+                    <source><![CDATA[
+ <mixin class="foo.bar.MyMixinImpl"/>
+
+ <mixin class="foo.bar.MyOtherMixinImpl"
+    deployment-model="perClass"
+    transient="true"
+    factory="factories.MyMixinFactory"
+    bind-to="within(*..domain.*)"/>
+                    ]]></source>
+                </p>
+            </subsection>
+
+            <subsection name="Custom Mixin factory">
+                <p>
+                 If you need to be in control of how the aspects are instantiated and/or need to pass in
+                 additional dependencies or configuration using an IoC (dependency injection) framework or similar.
+                 Then you can create custom mixin factory.
+                </p>
+                <p>
+                 The custom factory needs to implement the
+                    <code>org.codehaus.aspectwerkz.aspect.MixinFactory</code>:
+                    <source><![CDATA[
+ public interface MixinFactory {
+
+ /**
+  * Creates a new perClass mixin instance, if it already exists then return it.
+  *
+  * @param the target class
+  * @return the mixin instance
+  */
+ Object mixinOf(Class klass);
+
+ /**
+  * Creates a new perInstance mixin instance, if it already exists then return it.
+  *
+  * @param the target instance
+  * @return the mixin instance
+  */
+ Object mixinOf(Object instance);
+ }
+                    ]]></source>
+                </p>
+                <p>
+                 The custom mixin factory can only be defined in the
+                    <code>mixin</code> element in the
+                    <code>META-INF/aop.xml</code> file.
+                </p>
+
+            </subsection>
+
+            <subsection name="Retrieval of Mixin instances">
+                <p>
+                    You can get a hold of the mixin instances for a specific instance or class through the
+                    <code>org.codehaus.aspectwerkz.aspect.management.Mixins</code> class.
+                </p>
+                <p>
+                Example:
+                    <source><![CDATA[
+// get per class deplolyed mixin
+Object perclassMixin = Mixins.mixinOf(MyMixin.class, Target.class);
+
+// get per instance deplolyed mixin
+Object perinstanceMixin = Mixins.mixinOf(MyMixin.class, targetInstance);
+                    ]]></source>
+                </p>
+            </subsection>
+        </section>
+
+        <section name="Retrieval of Aspect instances">
+            <p>
+            You can get a hold of specific aspect instances using the
+                <code>org.codehaus.aspectwerkz.aspect.management.Aspects</code> class.
+            </p>
+            <p>
+        Example:
+                <source><![CDATA[
+// get per jvm deployed aspect
+Object singletonAspect = Aspects.aspectOf(MyAspect.class);
+               ... = Aspects.aspectOf("uniqueNameOfAspect");
+
+// get per class deployed aspect
+Object perclassAspect = Aspects.aspectOf(MyAspect.class, Target.class);
+              ... = Aspects.aspectOf("uniqueNameOfAspect", Target.class);
+
+// get per instance deployed aspect
+Object perinstanceAspect = Aspects.aspectOf(MyAspect.class, targetInstance);
+                 ... = Aspects.aspectOf("uniqueNameOfAspect", targetInstance);
+                ]]></source>
+            </p>
+        </section>
+
+        <section name="Example of an Aspect">
+            <p>
+                   This is a simple example showing how an aspect implementation with a couple of advice
+                    and an introduction could look like (Note: annotations to define the aspects are ommitted here):
+                <source><![CDATA[
+public class MyAspect {
+
+     public Object myAroundAdvice(StaticJoinPoint staticJoinPoint) throws Throwable {
+         // do some stuff
+         Object result = staticJoinPoint.proceed();
+         // do some other stuff
+         return result;
+     }
+
+     public void myBeforeAdvice(JoinPoint joinPoint) {
+         // do some stuff
+     }
+
+     // the Mixin could be an outer class
+     public static class MyIntroduction extends SuperMixin implements ContractualInterface {
+         ... // introduced methods and fields
+     }
+}
+                    ]]></source>
+            </p>
+        </section>
+
+        <section name="Choosing a definition model">
+            <p>
+                The
+                <a href="xml_definition.html">XML definition</a> allows to define the pointcut expressions in an external file.
+                It can be used
+                to provide aspects that needs to be tuned without an extra development phase (apart from editing an XML file).
+                The main disadvantage with this approach is that the implementation is separated from the definition which
+                makes the code harder to refactor, maintain and reuse.
+                <br/>
+                Using the XML definition is a bit more difficult as well when pointcuts have complex signature to expose
+                runtime arguments and instances (args(..), this(..), target(..)).
+            </p>
+            <p>
+                The
+                <a href="attribute_definition.html">Annotation definition</a> allows you to have truly self-contained aspect components.
+                Those are easier to maintain, refactor and reuse as well as build libraries upon. The drawbacks are when you are not using Java 5, it
+                requires an additional post-compilation step to annotate them with the metadata. Moreover it
+                introduces tighter coupling, and makes the aspect harder to configure. You would have to extend the aspect to refine it.
+            </p>
+            <p>
+                We have exprerienced that a combination of both definition formats can be beneficial. For example define
+                the reusable aspects and advice using annotations but do the pointcut definition in the external XML file.
+                This allows you to make certain decisions later in the development cycle, for example at deployment time
+                instead of at compile time.
+            </p>
+        </section>
+    </body>
+</document>

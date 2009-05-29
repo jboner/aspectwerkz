@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <title>AspectWerkz Extensible Aspect Container</title>
+    </properties>
+    <body>
+        <section name="AspectWerkz Extensible Aspect Container">
+            <p>
+                The last couple of years the Java AOP landscape has flourished. It has gone from one single implementation
+                (AspectJ), to a whole bunch of frameworks, each one with its own way of defining and instantiating its aspects
+                 and with its own weaver, runtime environment and tools. Even though having many ways of doing things is not
+                 necessary a bad thing, especially not in such early days of a new technology, it is not making it easier for
+                 new users of AOP and does not speed up its adoption.
+            </p>
+            <p>
+                When you look at most frameworks out there you can see that they have a lot in common, most of them share same
+                 semantics, life-cycle options etc. Most of them have re-implemented concepts introduced by AspectJ and in some
+                 cases introduced their own.
+            </p>
+            <p>
+                This is something that we have had in mind when we were designing the new AspectWerkz container and weaver and
+                 led us to an open architecture that was easy to extend, an architecture that formed the foundation for the
+                 AspectWerkz Extensible Aspect Container.
+            </p>
+            <p>
+                Basically it allows you to plug in extensions that can handle the framework specific details, while the common
+                 things are shared. What this brings you is a weaver and a container that can weave, deploy and run any aspect
+                 no matter how it is implemented and defined.
+            </p>
+            <p>
+                This introduces many advantages and opens for standardization on tools (development and runtime manageability).
+            </p>
+            <p>
+                Read more about this in the
+					<a href="http://www.theserverside.com/articles/article.tss?l=AspectWerkzP1">TSS article</a>
+            </p>
+        </section>
+
+    </body>
+</document>
+

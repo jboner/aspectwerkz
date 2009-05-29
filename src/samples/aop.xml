@@ -1,0 +1,41 @@
+<!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="samples">
+        <package name="examples">
+            <aspect class="proxy.tracing.TracingAspect">
+                <pointcut name="methodsToLog" expression="execution(* examples.proxy.tracing.TraceMe*.*(..))"/>
+                <!--                <pointcut name="methodsToLog" expression="execution(* examples.proxy.tracing.TraceMe*.*(..)) ||-->
+                <!--                                                          execution(examples.proxy.tracing.TraceMe*.new(..)) ||-->
+                <!--                                                          execution(* java.util.ArrayList.*(..))-->
+                <!--                                                          "/>-->
+                <advice name="logMethod(StaticJoinPoint)" type="around" bind-to="methodsToLog"/>
+                <advice name="logBefore(StaticJoinPoint)" type="before" bind-to="methodsToLog"/>
+                <advice name="logAfter(StaticJoinPoint)" type="after" bind-to="methodsToLog"/>
+            </aspect>
+
+            <aspect class="caching.Fibonacci$FibonacciCacheAspect" deployment-model="perInstance"/>
+
+            <aspect class="caching.CachingAspect" deployment-model="perInstance">
+                <param name="timeout" value="10"/>
+            </aspect>
+
+            <mixin class="introduction.IntroductionAspect$MyConcreteImpl"/>
+            <aspect class="introduction.IntroductionAspect" deployment-model="perClass"/>
+
+            <aspect class="cflow.CFlowAspect"/>
+            <aspect class="exception.ExceptionHandlingAspect"/>
+            <aspect class="logging.ArgAspect"/>
+            <aspect class="logging.PreparePointcuts"/>
+
+            <aspect class="annotation.Target$AnnotationMatchAspect"/>
+
+            <!--                        <aspect class="logging.XmlDefLoggingAspect">-->
+            <!--                            <pointcut name="methodsToLog" expression="execution(* examples.logging.Target.toLog*(..))"/>-->
+            <!--                            <advice name="logMethod" type="around" bind-to="methodsToLog"/>-->
+            <!--                            <advice name="logBefore" type="before" bind-to="methodsToLog"/>-->
+            <!--                        </aspect>-->
+        </package>
+    </system>
+</aspectwerkz>

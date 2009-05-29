@@ -1,0 +1,258 @@
+<?xml version="1.0"?>
+
+<document>
+
+    <properties>
+
+        <title>AspectWerkz</title>
+
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+
+    </properties>
+
+    <body>
+
+        <section name="Features">
+
+            <subsection name="AspectWerkz supports the following features">
+
+                <p>
+
+                    This is a very incomplete list, see the documentation for all features.
+
+                </p>
+
+                <ul>
+
+                    <li>
+
+                        Very high-performant. Weaved code is entirely statically compiled.
+
+                        AspectWerkz ranks 1st or 2nd in most of the benchmarks. Read more about the figures
+
+                        on the <a href="http://docs.codehaus.org/display/AW/AspectWerkz+performance">AspectWerkz Bench project pages</a>.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                         <b>Annotation support</b>: Matching on annotations (both JavaDoc and JSR-175). Supports user-defined annotations,
+
+                         retrieval of annotations. Both JavaDoc and JSR-175 annotations are accessed through one
+
+                         single API and both schemes are strongly typed.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        Aspects, advices and introductions are written in <b>plain old
+
+                        Java code</b>. I.e. no new language to learn, no new compilation
+
+                        phases, no need to tell your manager ;-). Will work seamlessly in
+
+                        any IDE, debugger, refactoring tool and test framework.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        The target classes can be regular POJOs (Plain Old Java
+
+                        Objects), i.e. do not require to have an interface.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>Weaving</b> (bytecode modification) at compile time, load time and runtime.
+
+                        Hooks in and transforms classes loaded by
+
+                        <b>any</b> class loader
+
+                        except the bootstrap class loader. Which basically means that
+
+                        you can easily transform any (legacy) application or external
+
+                        library apart from rt.jar both at runtime and compile time.
+
+                        <br/>
+
+                        <code>JSR-163 JVMTI</code> is supported for Java 1.5 usage as well.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>The join point model</b> supports: staticinitialization, method execution and call, constructor execution and call,
+
+                        field access, field modification, catch handlers, cflow, within and withincode, hasmethod and hasfield. All advice works with all join points.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>Rich semantics</b> allow to access runtime information about the join point within the advice using regular types without any
+
+                        casting or object array access. Reflective access to runtime information is also possible.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>Introductions/Inter type declarations (also called Mixins)</b>, i.e. the possibility
+
+                        to add interfaces and implementations to existing classes.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>META-INF/aop.xml container</b>: Support for deploying several
+
+                        <code>aop.xml</code> Aspect defintion/deployment files alongside deployed
+
+                        application (
+
+                        <code>WEB-INF/aop.xml</code>,
+
+                        <code>META-INF/aop.xml</code>) and have them following
+
+                        the classloader hierarchy.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>Annotation definition</b>. Define your aspects and mixins using annotations using wether standardized Java 5 Annotations
+
+                        (JSR-175) or Java 1.3/1.4 custom doclet with strongly typed access.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                         <b>XML definition</b>. Define your aspects and mixins using XML. The XML definition can also be used to refine,
+
+                         override and resolve the annotation definition.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>Pluggable aspect manager</b> that can make it work seamlessly with IoC frameworks like Spring
+
+                        or PicoContainer.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        Support several different <b>deployment models</b> (scope) for aspects (perJVM(singleton), perClass, perInstance)
+
+                        and for mixin (perInstance, perClass, perJVM(singleton)).
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>Hot deployment</b>, aspects can be deployed and undeployed at runtime using a simple API.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        Fine-grained pattern language for selecting the join points.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        Highly orthogonal underlying model. All advice works with all join points and pointcut composition
+
+                        supports mixing all kinds of pointcuts.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        "Offline" transformation (can be used as a post-processor).
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        Support for passing configuration parameters to the advices through
+
+                        the definition.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        Simple usage and configuration.
+
+                    </li>
+
+                    <br/>
+
+                    <li>
+
+                        <b>Extensible container architecture</b> allows to run any Aspects (AspectWerkz, Spring AOP, AOP Alliance, subset of AspectJ)
+
+                        within the AspectWerkz runtime.
+
+                    </li>
+
+                    <br/>
+
+                </ul>
+
+            </subsection>
+
+        </section>
+
+    </body>
+
+</document>
+
+
+

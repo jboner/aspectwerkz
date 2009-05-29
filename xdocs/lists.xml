@@ -1,0 +1,142 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <title>Mailing lists</title>
+    </properties>
+    <body>
+        <section name="Mailing lists">
+            <p>
+                <table class="wikitable">
+                    <tr>
+                        <th>List Name</th>
+                        <th>Subscribe</th>
+                        <th>Unsubscribe</th>
+                        <th>Archive</th>
+                        <th>Old Archive</th>
+                    </tr>
+                    <tr>
+                        <td>AspectWerkz User</td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:user-subscribe@aspectwerkz.codehaus.org">Subscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:user-unsubscribe@aspectwerkz.codehaus.org">Unsubscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="http://archive.aspectwerkz.codehaus.org/user/">Archive</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="http://lists.codehaus.org/pipermail/aspectwerkz-user/">Old Archive</a>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>AspectWerkz Dev</td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:dev-subscribe@aspectwerkz.codehaus.org">Subscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:dev-unsubscribe@aspectwerkz.codehaus.org">Unsubscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="http://archive.aspectwerkz.codehaus.org/dev/">Archive</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="http://lists.codehaus.org/pipermail/aspectwerkz-devel/">Old Archive</a>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>AspectWerkz SCM</td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:scm-subscribe@aspectwerkz.codehaus.org">Subscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:scm-unsubscribe@aspectwerkz.codehaus.org">Unsubscribe</a>
+                            </span>
+                        </td>
+                        <!--
+                        NO NEED FOR ARCHIVE ON THAT
+                        <td>
+                            <span class="nobr">
+                                <a href="http://archive.aspectwerkz.codehaus.org/scm/">Archive</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="http://lists.codehaus.org/pipermail/aspectwerkz-commits/">Old Archive</a>
+                            </span>
+                        </td>
+                        -->
+                    </tr>
+                    <tr>
+                        <td>AspectWerkz Announce</td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:announce-subscribe@aspectwerkz.codehaus.org">Subscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:announce-unsubscribe@aspectwerkz.codehaus.org">Unsubscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="http://archive.aspectwerkz.codehaus.org/announce/">Archive</a>
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>AspectWerkz Despots</td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:despots-subscribe@aspectwerkz.codehaus.org">Subscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="mailto:despots-unsubscribe@aspectwerkz.codehaus.org">Unsubscribe</a>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="nobr">
+                                <a href="http://archive.aspectwerkz.codehaus.org/despots/">Archive</a>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </p>
+<!--            <p class="paragraph">For an explanation of the purpose of each mailing list, see-->
+<!--                <span class="nobr">-->
+<!--                    <a href="http://despots.codehaus.org/Project+Mailing+Lists">http://docs.codehaus.org/display/DESPOTS/Project+Mailing+Lists</a>-->
+<!--                </span>-->
+<!--            </p>-->
+        </section>
+
+        <section name="Search the lists">
+            <p>
+                Use CodeHaus Google search here: <a href="http://search.codehaus.org/">here</a>
+            </p>
+        </section>
+    </body>
+</document>
+

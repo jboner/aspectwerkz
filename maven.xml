@@ -1,0 +1,27 @@
+<project default="aspectwerkz:site" xmlns:m="jelly:maven" xmlns:jxr="jxr" xmlns:j="jelly:core" xmlns:u="jelly:util">
+
+    <!-- =================================================== -->
+    <!--  set properties -->
+    <!-- =================================================== -->
+    <property name="pathseparator" value=""/>
+    <property name="executableSuffix" value=""/>
+    <property name="target.dir" value="${basedir}/target"/>
+    <property name="lib.dir" value="${basedir}/lib"/>
+    <property name="bin.dir" value="${basedir}/bin"/>
+    <property name="dist.dir" value="${basedir}/dist"/>
+    <property name="src.dir" value="${basedir}/src"/>
+    <property name="main.classes" value="${target.dir}/classes"/>
+    <property name="test.classes" value="${target.dir}/test-classes"/>
+    <property name="samples.classes" value="${target.dir}/samples-classes"/>
+    <property name="extensions.classes" value="${target.dir}/extensions-classes"/>
+
+
+    <!-- =================================================== -->
+    <!--  preGoal for xdoc FAQ -->
+    <!-- =================================================== -->
+    <preGoal name="xdoc:jelly-transform">
+        <attainGoal name="faq"/>
+    </preGoal>
+</project>
+
+

@@ -1,0 +1,1021 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <author email="alex at gnilux dot com">alexandre vasseur</author>
+        <title>General definition issues</title>
+    </properties>
+    <body>
+        <section name="Table of Contents">
+            <p>
+                <b>General definition issues</b>
+            </p>
+            <p>
+                This section documents the pointcut language, and goes thru advanced configuration concepts like
+                pluggable aspect container and handling multiple AOP systems.
+            </p>
+            <p>
+                <ol>
+                    <li>
+                        <a href="#Join point selection pattern language">Join point selection pattern language</a>
+                    </li>
+                    <li>
+                        <a href="#Pointcut definition">Pointcut definition</a>
+                    </li>
+                    <li>
+                        <a href="#Pointcut composition">Pointcut composition</a>
+                    </li>
+                    <li>
+                        <a href="#Pointcut references">Pointcut references</a>
+                    </li>
+                    <li>
+                        <a href="#Pluggable container implementation">Pluggable container implementation</a>
+                    </li>
+                    <li>
+                        <a href="#AOP system">AOP system</a>
+                    </li>
+                    <li>
+                        <a href="#Passing parameters to aspects">Passing parameters to aspects</a>
+                    </li>
+                    <li>
+                        <a href="#Deployment models">Deployment models</a>
+                    </li>
+                </ol>
+            </p>
+        </section>
+        <section name="Join point selection pattern language">
+            <p>
+                <code>AspectWerkz</code> support a fine-grained pattern
+                language for picking out join points.
+            </p>
+            <subsection name="Wildcards">
+                <p>
+                    You can utilize two types of wildcards when constructing your
+                    patterns:
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                            <code>*</code> - which is used as a regular wildcard.
+                             Matches for example only one package level or one method parameter.
+                             When used to match a package name, matches
+                            <b>at least one</b> character. Else match
+                            <b>zero or more</b> character.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>..</code> - used either to match any sequence of characters that
+                             start and end with a "." (so it can be used to pick out all
+                             types in any subpackage) or in method selectors to match 
+                             <i>as many parameters as possible</i>.
+									  <br/>
+									  For example
+                            <code>org.codehaus..*</code>
+                             will match all classes in all subpackages starting from
+                            <code>org.codehaus</code>. 
+									 <br/>
+									 <code>* method(..)</code> will match all methods with 
+									 any number of parameters.
+                        </li>
+                    </ul>
+                     Note: you can only use the
+                    <code>..</code> wildcard as the
+                     "last" thing specified. I.e. this is
+                    <b>not</b> possible:
+                    <code>foo.bar..test.MyClass</code>, but this is:
+                    <code>foo.bar..</code>. The same thing holds for method
+                     parameters.
+                </p>
+                <p>
+                    Another specific character to express inheritance based matching will be presented further.
+                </p>
+            </subsection>
+            <subsection name="Combining the patterns">
+                <p>
+                    The patterns normally consists of a combination of a class and a method
+                    pattern or a class and a field pattern.
+                </p>
+                <p>
+                    Example of a full method pattern:
+                    <br/>
+                    <code>&lt;annotations&gt; &lt;modifiers&gt; &lt;return_type_pattern&gt; &lt;package_and_class_pattern&gt;.&lt;method_name_pattern&gt;(&lt;parameter_type_patterns&gt;)</code>
+                </p>
+                <p>
+                    Example of a full field pattern:
+                    <br/>
+                    <code>&lt;annotations&gt; &lt;modifiers&gt; &lt;field_type_pattern&gt; &lt;package_and_class_pattern&gt;.&lt;field_name_pattern&gt;</code>
+                </p>
+                <p>
+                    Example of a full class pattern:
+                    <br/>
+                    <code>&lt;annotations&gt; &lt;modifiers&gt; &lt;package_and_class_pattern&gt;</code>
+                </p>
+            </subsection>
+            <subsection name="Class selections">
+                <p>
+                    The classes are selected by specifying a pattern that
+                    consists of:
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                            the annotations
+                        </li>
+                        <li>
+                            the modifiers
+                        </li>
+                        <li>
+                            the full name of the class
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    All class patterns must follow this structure:
+                    <br/>
+                    <code>&lt;annotations&gt; &lt;modifiers&gt; &lt;full_class_name&gt;</code>
+                </p>
+                <p>
+                    For the class selections specify the full package name of
+                    the class along with some wildcards.
+                </p>
+                <p>
+                    <b>Examples:</b>
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                            <code>foo.bar.*</code> - will match
+                            <br/>
+                            <code>foo.bar.FooBar2</code> as well as
+                            <br/>
+                            <code>foo.bar.FooBear</code> but not
+                            <br/>
+                            <code>foo.bar.subpackage.FooMouse</code>
+                        </li>
+                        <br/>
+                        <li>
+                            <code>foo.*.FooBar</code> - will match
+                            <br/>
+                            <code>foo.bar.FooBar</code> as well as
+                            <br/>
+                            <code>foo.bear.FooBar</code> but not
+                            <br/>
+                            <code>foo.bear.FooBear</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>foo.*.FooB*</code> - will match
+                            <br/>
+                            <code>foo.bar.FooBar2</code> as well as
+                            <br/>
+                            <code>foo.bear.FooBear</code> as well as
+                            <br/>
+                            <code>foo.bear.FooB</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>public foo.bar.*</code> - will match
+                            <br/>
+                            <code>public static final foo.bar.FooBar</code> as well as
+                            <br/>
+                            <code>public static foo.bar.FooBar</code> but not
+                            <br/>
+                            <code>static foo.bar.FooBar</code> or
+                            <br/>
+                            <code>private foo.bar.FooBar</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>@Session foo.bar.*</code> - will match
+                            <br/>
+                            <code>@Session foo.bar.FooBar</code> but not
+                            <br/>
+                            <code>foo.bar.FooBar</code> or
+                            <br/>
+                            <code>private foo.bar.FooBar</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>foo..</code> - will match
+                            <br/>
+                            all classes in all packages starting with foo.
+                        </li>
+                    </ul>
+                </p>
+            </subsection>
+            <subsection name="Method selections">
+                <p>
+                    The methods are selected by specifying a pattern that
+                    consists of:
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                            the annotations
+                        </li>
+                        <li>
+                            the modifiers
+                        </li>
+                        <li>
+                            the return type
+                        </li>
+                        <li>
+                            the full name of the method (including class and package)
+                        </li>
+                        <li>
+                            the parameter types
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    All method patterns must follow this structure:
+                    <br/>
+                    <code>&lt;annotations&gt; &lt;modifiers&gt; &lt;return_type&gt; &lt;full_method_name&gt;(&lt;parameter_types&gt;)</code>
+                </p>
+                <p>
+                    <b>Examples</b>
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                            <code>int foo.*.Bar.method()</code> - will match
+                            <br/>
+                            <code>int method()</code> but not
+                            <br/>
+                            <code>int method(int i)</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int *.method(*)</code> - will match
+                            <br/>
+                            <code>int Foo.method(int i)</code> but not
+                            <br/>
+                            <code>int Foo.method()</code> and not
+                            <br/>
+                            <code>int apackage.Foo.method(int i)</code>
+                        </li>
+                        <br/>
+                        <li>
+                            <code>* method(..)</code> - will match
+                            <br/>
+                            <code>void Foo.method()</code> as well as
+                            <br/>
+                            <code>void apackage.Bar.method(int[] i)</code>
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int foo.*.*.method(*,int)</code> - will match
+                            <br/>
+                            <code>int method(String s, int i)</code> as well as
+                            <br/>
+                            <code>int method(int i1, int i2)</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int foo.*.Bar.method(..)</code> - will match
+                            <br/>
+                            <code>int method()</code> as well as
+                            <br/>
+                            <code>int method(String s, int i)</code> as well as
+                            <br/>
+                            <code>int method(int i, double d, String s, Object o)</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int foo.*.Bar.method(int,..)</code> - will match
+                            <br/>
+                            <code>int method(int)</code> as well as
+                            <br/>
+                            <code>int method(int i, String s)</code> as well as
+                            <br/>
+                            <code>int method(int i, double d, String s, Object o)</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int foo.*.Bar.method(java.lang.*)</code> - will match
+                            <br/>
+                            <code>int method(String s)</code> as well as
+                            <br/>
+                            <code>int method(StringBuffer sb)</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int foo.*.Bar.me*o*()</code> - will match
+                            <br/>
+                            <code>int method()</code> as well as
+                            <br/>
+                            <code>int metamorphosis()</code> and
+                            <code>int meo()</code> but not
+                            <br/>
+                            <code>int me()</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>* foo.*.Bar.method()</code> - will match
+                            <br/>
+                            <code>int method()</code> as well as
+                            <br/>
+                            <code>java.lang.String method()</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>java.lang.* foo.*.Bar.method()</code> - will match
+                            <br/>
+                            <code>java.lang.String Bar.method()</code> as well as
+                            <br/>
+                            <code>java.lang.StringBuffer Bar.method()</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>static int foo.*.Bar.method()</code> - will match
+                            <br/>
+                            <code>static int method()</code> but not
+                            <br/>
+                            <code>int method(int i)</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>@Transaction * foo.*.*.*(..)</code> - will match
+                            <br/>
+                            <code>@Transaction int method()</code> but not
+                            <br/>
+                            <code>void method(int i)</code>.
+                        </li>
+                    </ul>
+                </p>
+            </subsection>
+            <subsection name="Constructor selections">
+                <p>
+                    The constructors are selected by specifying a pattern that consists of:
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                           the annotations
+                        </li>
+                        <li>
+                           the modifiers
+                        </li>
+                        <li>
+                            the fully qualified name of the class (including package) plus the word 'new' as constructor name
+                        </li>
+                        <li>
+                            the parameter types
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    All the patterns must follow this structure:
+                    <br/>
+                    <code>&lt;annotations&gt; &lt;modifiers&gt; &lt;className&gt;.&lt;new&gt;(&lt;parameter_types&gt;)</code>
+                </p>
+                <p>
+                    <b>Examples</b>
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                            <code>foo.*.Bar.new()</code> - will match
+                            <br/>
+                            <code>new Bar()</code> but not
+                            <br/>
+                            <code>new Bar(int i)</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>* new(..)</code> - will match
+                            <br/>
+                            <code>new Foo()</code> as well as
+                            <br/>
+                            <code>new apackage.Bar(int[] i)</code>
+                        </li>
+                        <br/>
+                        <li>
+                            <code>*.new(String)</code> - will match
+                            <br/>
+                            <code>new Foo(String name)</code> and
+                            <br/>
+                            <code>new Bar(String name)</code> but not
+                            <br/>
+                            <code>new Foo()</code>.
+                        </li>
+                        <br/>
+                    </ul>
+                </p>
+            </subsection>
+            <subsection name="Field selections">
+                <p>
+                    The fields are selected by specifying a pattern that
+                    consists of:
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                           the annotations
+                        </li>
+                        <li>
+                           the modifiers
+                        </li>
+                        <li>
+                            the field type
+                        </li>
+                        <li>
+                            the full name of the field (including class and package)
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    All field patterns must follow this structure:
+                    <br/>
+                    <code>&lt;annotations&gt; &lt;modifiers&gt; &lt;field_type&gt; &lt;full_field_name&gt;</code>
+                </p>
+                <p>
+                    <b>Examples</b>
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                            <code>int foo.*.Bar.m_foo</code> - will match
+                            <br/>
+                            <code>int m_foo</code> but not
+                            <br/>
+                            <code>int s_foo</code> or
+                            <br/>
+                            <code>long m_foo</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>* m_field</code> - will match
+                            <br/>
+                            <code>int Foo.m_field</code> as well as
+                            <br/>
+                            <code>int[] apackage.Bar.m_field</code>
+                        </li>
+                        <br/>
+                        <li>
+                            <code>* foo.*.Bar.m_foo</code> - will match
+                            <br/>
+                            <code>int m_foo</code> as well as
+                            <br/>
+                            <code>java.lang.String m_foo</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>java.lang.* foo.*.Bar.m_foo</code> - will match
+                            <br/>
+                            <code>java.lang.String m_foo</code> as well as
+                            <br/>
+                            <code>java.lang.StringBuffer m_foo</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int foo.*.Bar.m_*</code> - will match
+                            <br/>
+                            <code>int m_foo</code> as well as
+                            <br/>
+                            <code>int m_bar</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            <code>int foo.*.Bar.m_*oo*</code> - will match
+                            <br/>
+                            <code>int m_foo</code> as well as
+                            <br/>
+                            <code>int m_looser</code> as well as
+                            <br/>
+                            <code>int m_oo</code>.
+                        </li>
+                    </ul>
+                </p>
+            </subsection>
+            <subsection name="Subtype patterns">
+                <p>
+                    It is possible to pick out all subtypes of a type with the "+" wildcard.
+                    The "+" wildcard follows immediately a type name pattern. So, while
+                </p>
+                <p>
+                    <code>* foo.Bar.*(..)</code>
+                </p>
+                <p>
+                    picks out all method call join points where an instance of exactly type Foo is
+                    constructed,
+                </p>
+                <p>
+                    <code>* foo.Bar+.*(..)</code>
+                </p>
+                <p>
+                    picks out all method call join points where an instance of any subtype of
+                    Foo (including Foo itself) is constructed.
+                </p>
+                <p>
+                    Note that in the previous sample, <code>foo.Bar</code> can be wether a class (a super class)
+                    or an interface.
+                </p>
+            </subsection>
+            <subsection name="Array type patterns">
+                <p>
+                    A type name pattern or subtype pattern can be followed by one or more sets of
+                    square brackets to make array type patterns. So java.lang.Object[] is an array type
+                    pattern, and so is foo.bar.*[][].
+                </p>
+            </subsection>
+            <subsection name="Abbreviations">
+                <p>
+                    When picking out the return and parameter types it is
+                    possible to use predefined abbreviations for the classes
+                    in the
+                    <code>java.lang.*</code> and
+                    <code>java.util.*</code>
+                    packages. If you specify only the class name it will be
+                    mapped to the full class name for the class (you cannot use patterns in abbreviations).
+                </p>
+                <p>
+                    Abbreviations are supported for array types as well, with a dimension less or equal to 2.
+                    <code>String[][]</code> will thus be resolved as
+                    <code>java.lang.String[][]</code> but
+                    <code>String[][][]</code> will not.
+                </p>
+                <p>
+                    Two extra specific abbreviations are in place:
+                    <code>JoinPoint</code> will be resolved as <code>org.codehaus.aspectwerkz.joinpoint.JoinPoint</code>
+                    and <code>StaticJoinPoint</code> will be resolved as <code>org.codehaus.aspectwerkz.joinpoint.StaticJoinPoint</code>.
+                    <br/>This is usefull when dealing with complex advice signature in the XML definition.
+                </p>
+                <p>
+                    <b>Examples</b>
+                </p>
+                <p>
+                    You can use:
+                    <ul>
+                        <li>
+                            <code>String</code> instead of
+                            <code>java.lang.String</code>
+                        </li>
+                        <li>
+                            <code>List</code> instead of
+                            <code>java.util.List</code>
+                        </li>
+                        <li>
+                            but not
+                            <code>String*</code> instead of
+                            <code>java.lang.String</code> or
+                            <code>java.lang.StringBuffer</code>
+                        </li>
+                        <li>
+                            and so on...
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    Apart from these abbreviations you always have to specify
+                    the fully qualified name of the class (along with the
+                    wildcards).
+                </p>
+            </subsection>
+        </section>
+        <section name="Pointcut definition">
+            <p>
+                 The pointcut is a construct that picks out join points, i.e. selects well-defined points in the program flow.
+            </p>
+            <subsection name="staticinitialization() pointcut">
+                <p>
+                    <code>staticinitialization(&lt;type pattern&gt;)</code> - picks out join points defining class
+                    static initialization.
+                </p>
+            </subsection>
+
+            <subsection name="execution() pointcut">
+                <p>
+                    <code>execution(&lt;method or constructor pattern&gt;)</code> - picks out join points defining method
+                    (static or member) or constructor execution.
+                </p>
+            </subsection>
+            <subsection name="call() pointcut">
+                <p>
+                    <code>call(&lt;method or constructor pattern&gt;)</code> - picks out join points defining method
+                    (static or member) or constructor call.
+                </p>
+            </subsection>
+            <subsection name="set() pointcut">
+                <p>
+                    <code>set(&lt;field pattern&gt;)</code> - picks out join points defining field modification.
+                </p>
+            </subsection>
+            <subsection name="get() pointcut">
+                <p>
+                    <code>get(&lt;field pattern&gt;)</code> - picks out join points defining field access.
+                </p>
+            </subsection>
+            <subsection name="handler() pointcut">
+                <p>
+                <code>handler(&lt;exception type pattern&gt;)</code> - picks out join points
+                definining a catch clause.
+                <br/>
+                Valid advice for this pointcut is
+                <code>before</code>.
+                </p>
+            </subsection>
+            <subsection name="within() pointcut">
+                <p>
+                <code>within(&lt;type pattern&gt;)</code> - picks out a type set.
+                <br/>
+                This pointcut can be used when you need to limit the scope on which join points you pick out.
+                It is really useful (and for most cases necessary) to use together with
+                <code>call</code> and
+                <code>handler</code> pointcuts.
+                <br/>
+                It can be used with other pointcuts as well (
+                <code>staticinitialization</code>, <code>execution</code>,
+                <code>get/set</code>) to narrow
+                the scope of the pointcut. For example,
+                <code>execution(* method(..))</code> will match all methods in all classes
+                but
+                <code>execution(* method(..)) AND within(com.Foo)</code> will match only in the com.Foo class.
+                </p>
+            </subsection>
+            <subsection name="withincode() pointcut">
+                <p>
+                <code>withincode(&lt;method or constructor pattern&gt;)</code> - picks out a method
+                or constructor set.
+                <br/>
+                <code>withincode(staticinitialization(&lt;type pattern&gt;))</code> - picks out a static class
+                initalizer set.
+                <br/>
+                This pointcut can be used when you need to limit the scope on which join points you pick out.
+                Really useful (and and most cases necessary) to use together with
+                <code>call</code>,
+                <code>get</code>,
+                <code>set</code> and
+                <code>handler</code> pointcuts.
+                </p>
+            </subsection>
+            <subsection name="args() pointcut">
+                <p>
+                    <code>args(&lt;type pattern or parameter name reference or greedy ".." pattern&gt; [, &lt;etc&gt;]*)</code>
+                    - picks out parameter types and optionnaly bind them as pointcut parameters.
+                    <br/>
+                    This pointcut has several usage forms that can be mixed together, but be carefull at not mixin several
+                    <code>args()</code> pointcut together in logical expression.
+                    <br/>
+                    <b>First</b> it can be used to filter method/constructor parameters types and field set field type.
+                    The special ".." pattern is used to match
+                    <i>as many parameters as possible</i> and should only be used once.
+                    <br/>
+                    <code>execution(* method(..)) AND args(String, com.Bar[])</code>
+                    is equivalent to
+                    <code>execution(* method(String, com.Bar[])</code> though it provides a better decomposition and could be split
+                    using pointcut references in something like
+                    <code>myMethodsExecution AND args(String, com.Bar[])</code>.
+                    <br/>Be carefull since
+                    <code>call(* method(String)) AND args(String, int)</code> will match .. nothing !
+                    <br/>
+                    <code>set(* Bar.m_field) AND args(String)</code> will match the
+                    <code>String Bar.m_field</code> field set.
+                    <br/>
+                    <b>Second</b> it can be used to retrieve and keep references to target method/constructor parameters and field value beeing set.
+                    For such a usage, the pointcut itself will be required to have a signature.
+                    <br/>
+                    <code>myPointcut(String s)</code> defined with
+                    <code>execution(* method(..)) AND args(s)</code> will thus
+                    match "method(String)" and moreover will further reference the parameter value of s. The advice will use this parameter in
+                    its own signature.
+                    <code>void myBeforeAdvice(JoinPoint, String as)</code> could thus be bounded to
+                    <code>myPointcut(as)</code>.
+                    In this syntax, you have to be very cautious about the parameter name, here "s" in the pointcut signature and args() expression as well as "as" (could be s or "whatYouWant")
+                    in the advice and the advice binding expression.
+                    <br/>If you are interested in getting the first and last parameter, no matter the number and types of parameters in between, the special
+                    <code>..</code> greedy
+                    pattern can then be used like in
+                    <code>myPointcut(String argLast, int argFirst)</code> defined with
+                    <code>execution(* method(..)) AND args(argFirst, .., argLast)</code>.
+                    In this sample, you will notice that the pointcut signature is not required to respect the parameter order, though it is a bit error prone.
+                    <br/>
+                    <b>Last</b>
+                    <code>args()</code> can be use to both match parameter types and retain their values like in
+                    <code>myPointcut(String s)</code> defined with
+                    <code>execution(* method(String, ..)) AND args(s, int, com.Bar, StringBuffer[][])</code>.
+                    In such an expression, you will have noticed that we have to fully define the
+                    <code>com.Bar</code> type, while abbreviations for
+                    <code>java.lang.*</code>
+                    could be used (see the previous part for a note on abbreviations).
+                    <br/>
+                </p>
+            </subsection>
+            <subsection name="target() and this() pointcuts">
+                <p>
+                    <code>target(&lt;type pattern or parameter name reference&gt;)</code>
+                    - picks out the target (callee) instance type and optionnaly bind it as pointcut parameter.
+                    <br/>
+                    <code>this(&lt;type pattern or parameter name reference&gt;)</code>
+                    - picks out the this (caller) instance type and optionnaly bind it as pointcut parameter.
+                    <br/>
+                </p>
+                <p>
+                    this(..) and target(..) pointcut designators can be used to narrow
+                    a pointcut expression based on caller and calle types or to gain access to those in the advice
+                    signature without any casting or reflective access.
+                </p>
+                <p>
+                    Note that they will implictly filter out
+                    callee side static methods, callee constructors on constructor call pointcut (since the callee is not
+                    available yet), and caller side static method for call pointcuts and field pointcuts.
+                </p>
+                <p>
+                    <b>First</b>, when used with type patterns: target(foo.*), this(foo.Bar+), etc, they will filter
+                    respectively callee and caller types.
+                </p>
+                <p>
+                    <b>Second</b>, when used with a paramter binding, they will allow to gain direct access to
+                    respectively callee (target) and caller (this) instance in advice by using advice argument binding,
+                    when combined with pointcut with signature or advice with signature (see previous part).
+                <source><![CDATA[
+// this pointcut is not declared as a field since it exposes parameter binding
+// note use of "bar" variable name
+@Expression("target(bar)")
+void pointcut(Bar bar) {}
+
+// use the pointcut with respect to its signature
+// note use of "myBar" variable name
+@Before("execution(* *..method(..)) && pointcut(myBar)")
+void before(Bar myBar) {
+    myBar.callback();
+}
+                ]]></source>
+                </p>
+            </subsection>
+            <subsection name="cflow() pointcut">
+                <p>
+                    <code>cflow(&lt;pointcut expression&gt;)</code> - picks out join points defining a control flow (cflow).
+                    Note: the nested pointcut expression must not bind parameters. args(), this() and target() can be used
+                    with typed expression only (ie statefull cflow is not yet supported). Nested cflow() can be used.
+                </p>
+            </subsection>
+            <subsection name="hasmethod() pointcut">
+                <p>
+                    <code>hasmethod(&lt;method or constructor pattern&gt;)</code> - picks out a class that
+                    has at least one method or constructor that match the given pattern.
+                    <br/>
+                    This pointcut can be used when you need to limit the scope on which join points you pick out based on
+                    a structural information of the class in which the join point may appear. This pointcut is similar to
+                    <code>within</code> - that is for example: hasmethod(* com.Foo.*(..)) is equivalent to within(com.Foo) unless the com.Foo class
+                    has no method at all.
+                </p>
+            </subsection>
+            <subsection name="hasfield() pointcut">
+                <p>
+                    <code>hasfield(&lt;field pattern&gt;)</code> - picks out a class that
+                    has at least one field that match the given pattern.
+                    <br/>
+                    This pointcut can be used when you need to limit the scope on which join points you pick out based on
+                    a structural information of the class in which the join point may appear. This pointcut is similar to
+                    <code>within</code>
+                </p>
+            </subsection>
+            <subsection name="Named or anonymous pointcuts">
+                <p>
+                    Pointcuts can either defined:
+                    <ul>
+                        <li>
+                            explicitly - by giving them a name, this is done differently in the
+                            <a href="xml_definition.html#Pointcuts">XML</a>
+                            and the
+                            <a href="attribute_definition.html#Pointcuts">Annotation</a> definitions.
+                        </li>
+                        <br/>
+                        <li>
+                            anonymously - directly bound to an
+                            <a href="implementation.html#Advice">advice</a> and/or as part of a
+                            <a href="#Pointcut composition">pointcut composition</a> expression.
+    `
+                        </li>
+                    </ul>
+                    There is one exception: the XML syntax does not allow for anonymous pointcut with an
+                    <code>args()</code> selector. The pointcut
+                    with a signature must be named (so that the named paramter in args() can be referenced in its signature).
+                </p>
+            </subsection>
+        </section>
+        <section name="Pointcut composition">
+            <p>
+                <code>AspectWerkz</code> supports pointcut composition, which means that poincuts can be composed.
+                To compose pointcut expressions you can use these logical operators:
+                <ul>
+                    <li>
+                        <code>!</code> - logical not
+                    </li>
+                    <br/>
+                    <li>
+                        <code>||</code> or
+                        <code>OR</code> - logical or
+                    </li>
+                    <br/>
+                    <li>
+                        <code>&amp;&amp;</code> or
+                        <code>AND</code> - logical and
+                    </li>
+                    <br/>
+                    <li>
+                        parenthesis for grouping
+                    </li>
+                </ul>
+                In the XML definition the operator AND is more convenient (else &amp; has to be escaped).
+            </p>
+            <p>
+                Using these operators together with parenthesis you can form any kind of algebraic expression.
+                The model is highly orthogonal since all it allows you to mix any type of pointcut when composing new pointcuts.
+            </p>
+            <p>
+                <code>!</code> also works in conjunction with modifiers.
+                For example:
+                <code>!public * *..*.*(..)</code> for picking out all non-public methods.
+            </p>
+            <p>
+                Examples:
+                <source><![CDATA[
+staticinitialization(foo..*) && within(@AnnotatedFoo)
+
+execution(* foo.bar.Baz.*(..)) || call(* foo.bar.Baz.*(..))
+
+(set(* foo.bar.*) || get(* foo.bar.*)) && withincode(* foo.bar.Buzz.*(..))
+
+handler(java.lang.Exception+) && !cflow(call(* foo.bar.Buzz.(..)))
+
+call(!public !static * *..*.*(..))
+                ]]></source>
+            </p>
+        </section>
+        <section name="Pointcut references">
+            <p>
+                You can define pointcuts in one aspect definition (in XML or in annotations) and then refer to this
+                pointcut in another aspect definition.
+            </p>
+            <p>
+                This can be very useful when building up pointcut libraries that you want to use throughout
+                the projects or multiple projects.
+            </p>
+            <p>
+                You are referring to the external pointcut by using the aspect name (the full
+                name of the aspect class if not a custom name has been defined) followed by a dot and then the
+                pointcut name. For example:
+                <code>mylib.J2EEPointcuts.sessionBeans</code>
+            </p>
+            <p>
+                Example:
+                <source><![CDATA[
+<aspect class="foo.bar.MyAspect>
+    <pointcut name="transactedSessionBeanMethods"
+              expression="call(@Transaction * *..*.*(..)) && within(mylib.J2EEPointcuts.sessionBeans)"/>
+    ...
+</aspect>
+                ]]></source>
+            </p>
+            <p>
+                Note that you can only reference pointcut from Aspects defined within the same AOP system.
+            </p>
+        </section>
+        <section name="Pluggable container implementation">
+            <p>
+                You have the possibility of providing your own aspect container implementation.
+                This can be useful if you need to control how your aspects are instantiated.
+                (For example if you want to have them working with an IoC container (Spring, PicoContainer etc.))
+            </p>
+            <p>
+                To create a custom container you only need to implement the
+                <code>org.codehaus.aspectwerkz.aspect.AspectContainer</code> interface, but it can
+                be very beneficial to extend the
+                <code>org.codehaus.aspectwerkz.aspect.AbstractAspectContainer</code> abstract base class
+                (and only implement the abstract method
+                <code>Object createAspect()</code>).
+            </p>
+            <p>
+                You specify which aspect should use which container in the XML definition using the
+                <code>container</code> element.
+            </p>
+            <p>
+               Example:
+                <source><![CDATA[
+<aspect class="foo.bar.Baz" container="org.codehaus.aware.container.SpringAspectContainer">
+    ...
+</aspect>
+                ]]></source>
+            </p>
+            <p>
+                If you don't provide a custom implementation the default one will be used.
+            </p>
+            <p>
+                For a complete example on how to write your own custom aspect container take a look at the
+                <a href="http://docs.codehaus.org/display/AWARE/SpringAspectContainer">SpringAspectContainer documentation</a> (and sources).
+            </p>
+        </section>
+        <section name="AOP system">
+            <p>
+                Deployed aspects belong to an aspect
+                <code>system</code>. The system provides namespace isolation and is ClassLoader aware.
+                Aspect systems are named in the XML definition file and each system
+                must have a unique name within a ClassLoader hierarchy. This is a good practice to use a package naming
+                convention for naming your system.
+                The system name (
+                <code>id</code>) is used when accessing system at runtime, for example when redefining the aspect system.
+            </p>
+            <p>
+               Example:
+                <source><![CDATA[
+<aspectwerkz>
+    <system id="my.system.name">
+        <aspect name="MyAspect1"/>
+        <aspect name="MyAspect2"/>
+        ...
+    </system>
+</aspectwerkz>
+                ]]></source>
+            </p>
+            <p>
+                Sample to access the system(s) at runtime
+                <source><![CDATA[
+SystemDefinition system = SystemDefinition.getDefinitionFor(classLoader, id);
+
+Set<SystemDefinition> systems = SystemDefinition.getDefinitionsFor(classLoader);
+                ]]></source>
+            </p>
+            <p>
+                Systems follow ClassLoader rules. 
+                <!--For a more complete discussion refer to
+                <a href="startup_and_runtime_issues.html#Handling_several_Aspects_across_several_deployed_applications">
+                this section</a>.-->
+            </p>
+        </section>
+        <section name="Passing parameters to aspects">
+            <p>
+                You also have the option of passing parameters to your aspects.
+                This can be very convenient if you want to reuse the same
+                aspect but with a different configuration without using aspect inheritance.
+                To pass a parameter to the aspect you simply add a
+                <code>param</code> tag to the
+                <code>aspect</code> definition, like this:
+            </p>
+            <p>
+                <source><![CDATA[
+<aspect ... >
+    <param name="timeout" value="10"/>
+</aspect>
+                ]]></source>
+            </p>
+            <p>
+                To retrieve the parameter (from within an aspect) use
+                <code>AspectContext.getParameter("timeout")</code>
+                to retrieve the parameter value as a String.
+            </p>
+            <p>
+                To set a new (or override) a parameter (from within an aspect) use
+                <code>AspectContext.setParameter("timeout", "10")</code>
+                to retrieve the parameter value as a String.
+            </p>
+        </section>
+        <section name="Deployment models">
+            <p>
+                <code>AspectWerkz</code> supports different deployment models,
+                which defines the scope of the
+                <code>Aspect</code> and <code>Mixin</code>.
+            </p>
+            <p>
+                The three different deployment models for Aspects are:
+                <ul>
+                    <li>
+                        <code>perJVM</code> - one sole instance per JVM.
+                        Basically the same thing as a singleton class.
+                    </li>
+                    <br/>
+                    <li>
+                        <code>perClass</code> - one instance per class.
+                    </li>
+                    <br/>
+                    <li>
+                        <code>perInstance</code> - one instance per class instance.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                The three different deployment models for Mixins are:
+                <ul>
+                    <li>
+                        <code>perInstance</code> - one instance per class instance.
+                    </li>
+                    <br/>
+                    <li>
+                        <code>perClass</code> - one instance per class.
+                    </li>
+                    <li>
+                        <code>perJVM</code> - one instance per JVM.
+                        Basically the same thing as a singleton class.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                The deployment model can be specified using the <code>@Aspect</code> or <code>@Mixin</code>
+                annotation or using the XML definition. Refer to the sections covering
+                <a href="attribute_definition.html">Annotation</a> or
+                <a href="xml_definition.html">XML</a> definitions.
+            </p>
+        </section>
+    </body>
+</document>

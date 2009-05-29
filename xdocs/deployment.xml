@@ -1,0 +1,345 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <author email="alex at gnilux dot com">Alexandre Vasseur</author>
+        <title>Deployment</title>
+    </properties>
+    <body>
+        <section name="Table of Contents">
+            <p>
+                <ol>
+                    <li>
+                        <a href="#Aspect deployment descriptor - META-INF/aop.xml">Aspect deployment descriptor - META-INF/aop.xml</a>
+                    </li>
+                    <li>
+                        <a href="#Understanding class loading in Java">Understanding class loading in Java</a>
+                    </li>
+                    <li>
+                        <a href="#Weaving scope of the META-INF/aop.xml and WEB-INF/aop.xml files">Weaving scope of the META-INF/aop.xml and WEB-INF/aop.xml files</a>
+                    </li>
+                    <li>
+                        <a href="#Aspect systems">Aspect systems</a>
+                    </li>
+                    <!--                    <li>-->
+                    <!--                        <a href="#Remote Proxy Server - RPC mechanism">Remote Proxy Server - RPC mechanism</a>-->
+                    <!--                    </li>-->
+                </ol>
+            </p>
+        </section>
+        <section name="Aspect deployment descriptor - META-INF/aop.xml">
+            <p>
+                    Since release 1.0 AspectWerkz support to
+                <a name="Handling several Aspects across several deployed applications"> configure several
+                    <code>AspectSystem</code> alongside the deployed applications and the container
+                </a> (application server)
+                    in which those are deployed. As described
+                <a href="xml_definition.html">here</a>, you need to write an
+                <b>AOP XML deployement descriptor</b> for your aspects, that declares the
+                    Aspects to use, and defines or refines the pointcuts (where to do) and advices (what to do), no matter your Aspects are using an annotations based
+                    definition or a full XML defintions, or both.
+                <p/>
+                    When thinking about this
+                <code>aop.xml</code> file, you need to remember that the declared Aspects will affect 
+                the classes visible from the <code>ClassLoader</code> that can access this file.
+                    For example if you package this file in
+                <code>application.war/WEB-INF/aop.xml</code>, it will affect all web-application classes, third parties libraries from
+                <code>application.war/WEB-INF/lib/</code> and all JSPs.
+                <p/>
+                    If you want to affect all JVM classes, you can use the JVM option
+                <code>-Daspectwerkz.definition.file=path/aop.xml</code>, or better have one or more
+                <code>META-INF/aop.xml</code> file(s)
+                    accessible from the JVM regular classpath.
+                <p/>
+                    It is thus possible to organise your aspects alongside all your deployed applications, while allowing some interesting schemes: a tracing Aspect deployed
+                    at the JVM level will affect all deployed applications, while Aspects deployed within the application itself will only affect this application.
+                <p/>
+                    If you plan to use
+                <a href="weaving.html#Offline_weaving">offline mode</a>, you need to post process your application as many time as you have aop.xml files, and still packaged the aop.xml file(s)
+                    alongside the application and/or at a JVM wide level, depending on what you want to achieve.
+                <p/>
+                <b>To summarize, you have to remember that an
+                    <code>META-INF/aop.xml</code> or
+                    <code>WEB-INF/aop.xml</code> file will affect the classes loaded by the classloader(s)
+                    that have this aop.xml file in their path. The JVM wide aop.xml file will affect the system classloader and all child classloaders.
+                </b>
+            </p>
+        </section>
+
+        <section name="Understanding class loading in Java">
+            <p>
+                    You should be familiar with the way Java handles
+                <b>ClassLoader isolation</b> to fully understand how to deploy your own Aspects.
+                <p/>
+                    When you are invoking a
+                <code>main</code> method of a Class, this class is loaded (and lives) in the
+                <b>System ClassLoader</b>. All classes belonging to a path specified
+                    with a
+                <code>-cp</code> or
+                <code>-classpath</code> JVM option will live in this ClassLoader.
+                <p/>
+                    If this class is using
+                <code>java.lang.Object</code> and other
+                <code>java.*</code> classes, those have been loaded (and live) in
+                <b>Extension ClassLoader</b>
+                    or
+                <b>Bootstrap ClassLoader</b>.
+                <p/>
+                    The
+                <code>java.lang.Object</code> can be seen and used by your main Class since the
+                <b>System ClassLoader</b> is by convention a
+                <b>child</b> of the
+                <b>Extension ClassLoader</b>
+                    which is himself a
+                <b>child</b> of the
+                <b>Boot ClassLoader</b>. This relation looks like this:
+                <code>
+                    <pre>
+					Boot ClassLoader (JRE / JDK classes)
+						|
+					Extension ClassLoader (JRE extension, like SSL security etc, in jre/ext directory)
+						|
+					System ClassLoader (your main Class, and all the -cp / -classpath jars and classes)
+                    </pre>
+                </code>
+                <p/>
+                    When you are using an application server, there are usually many other classloaders. A simple view is to say that there is
+                    one classloader per deployed application (that's why you don't need to add your war file in the JVM classpath right ?).
+                    In fact the picture is a bit more complex to allow JSPs changes while the application is running etc.
+                    Those
+                <b>application ClassLoaders</b> are
+                <b>child</b> of upper ClassLoaders like the
+                <b>System ClassLoader</b>, but if you deploy two war files,
+                    they cannot share classes unless thoses classes are in an upper ClassLoader.
+                <p/>
+                    If we deploy two war file in a Tomcat we will end-up in the following (simplified) organization:
+                <code>
+                    <pre>
+					Boot ClassLoader (JRE / JDK classes)
+						|
+					Extension ClassLoader (JRE extension, like SSL security etc, in jre/ext directory)
+						|
+					System ClassLoader (the Tomcat main Class, and all the -cp / -classpath jars and classes)
+						|
+					Some Tomcat specific ClassLoader (does not really matters)
+								|                                   |
+						  First.war ClassLoader               Second.war ClassLoader
+								|                                    |
+						  WEB-INF/lib                            WEB-INF/lib
+						 and WEB-INF/classes                    and WEB-INF/classes
+						 ClassLoader                            ClassLoader for Second.war
+								|   |                                 |   |   |
+						 JSP ClassLoader(s)                     JSP ClassLoader(s)
+                    </pre>
+                </code>
+            </p>
+            <p>
+                    For J2EE / EJB based application, the schemes is a bit more complex but follows the same model.
+                <br/> Although this kind of organization is mainly J2EE oriented, some Swing based application are using
+                    ClassLoader parent-child relation to allow for example plugin life cycles etc.
+            </p>
+        </section>
+        <section name="Weaving scope of the META-INF/aop.xml and WEB-INF/aop.xml files">
+            <p>
+                    The single idea you need to remember is that AspectWerkz deployed Aspects thru aop.xml files have the scope of the ClassLoader
+                    that has this file in its path and all its child ClassLoader(s).
+            </p>
+            <p>
+                    Three specific paths are used:
+                <ul>
+                    <li>JVM wide: defined with
+                        <code>-Daspectwerkz.definition.file=path/aop.xml</code>, it impacts all JVM classes (except boot classloader for convenience). Note that it is
+                        <b>not</b> mandatory to name the file aop.xml
+                    </li>
+                    <li>defined with
+                        <code>WEB-INF/aop.xml</code>, it will impact the classes of the web application including JSPs. It is mandatory to name the file aop.xml
+                    </li>
+                    <li>defined with
+                        <code>META-INF/aop.xml</code>, it will impact the classes that can
+                        <i>see</i> this file. It is mandatory to name the file aop.xml
+                    </li>
+                </ul>
+                    It is thus possible to place a
+                <code>path/META-INF/aop.xml</code> in the JVM classpath (
+                <code>-cp path/;...</code>) to have the same scope as
+                    the JVM wide defined one.
+                <br/>
+                    If a
+                <b>jar file</b> of the JVM classpath contains a
+                <code>META-INF/aop.xml</code> file, it will aslo have the same scope.
+                <br/>
+                    The
+                <b>precedence</b> between the aspects is then the one of the classpath, and then the one of the order in the
+                <code>aop.xml</code> file.
+                <p/>
+                    With this model, it is thus possible to package a tracing aspect in a jar file, with a
+                <code>META-INF/aop.xml</code> file (with a pointcut for all public method execution f.e.)
+                    and just add it to your classpath to allow a very simple generic tracing !
+                <br/>
+            </p>
+        </section>
+        <section name="Aspect systems">
+            <p>
+                    A single
+                <code>aop.xml</code> file can declare several
+                <code>Aspect Systems</code> for convenience. All will have the same weaving scope. The goal is mainly to
+                    have a well organized namespace for organizing your aspects.
+                    The
+                <b>precedence</b> will follow the order of the
+                <code>&lt;system&gt;</code> elements in the XML file.
+                    Each system must have a unique id within a ClassLoader hierarchy, as  defined with
+                <code>&lt;system id="some/system"&gt;</code>
+                <p/>
+                    In the following two systems are defined, and the
+                <code>system id</code> is using the application name and a path as a mnemonic, allthough it could
+                    be any string.
+                <source><![CDATA[
+<aspectwerkz>
+    <system id="First.war/WEB-INF/FirstSystem">
+        <package name="examples">
+            <aspect class="caching.CachingAspect" deployment-model="perInstance"/>
+        </package>
+    </system>
+    <system id="First.war/WEB-INF/SecondSystem">
+        <aspect class="examples.trace.TracingAspect" deployment-model="perJVM"/>
+    </system>
+</aspectwerkz>
+                ]]></source>
+            </p>
+        </section>
+
+
+
+        <!--        <section name="Remote Proxy Server - RPC mechanism">-->
+        <!--            <p>-->
+        <!--                <code>AspectWerkz</code> provides an RPC mechanism that allows you to use the-->
+        <!--                instrumented objects (advices and mixins) seamlessly on a remote client site.-->
+        <!--            </p>-->
+        <!--            <subsection name="Client side">-->
+        <!--                <p>-->
+        <!--                    You can use the remote proxy on the client side in two ways:-->
+        <!--                    <ul>-->
+        <!--                        <li>-->
+        <!--                            create a client proxy that creates a matching instance on the server.-->
+        <!--                            The client now has seamless access this new specific instance on the server.-->
+        <!--                            <p>-->
+        <!--                                <b>Example:</b>-->
+        <!--                                <source><![CDATA[-->
+        <!--...-->
+        <!--// creates a new remote proxy for the MixinImpl class which-->
+        <!--// maps to an instance of this class on the server-->
+        <!--RemoteProxy remoteProxy = RemoteProxy.createClientProxy(-->
+        <!--        new String[]{"examples.connectivity.Mixin"},-->
+        <!--        "examples.connectivity.MixinImpl",-->
+        <!--        "localhost",-->
+        <!--        7777-->
+        <!--);-->
+        <!---->
+        <!--// retrieves the proxy to the MixinImpl instance-->
+        <!--Mixin mixin = (Mixin)remoteProxy.getInstance();-->
+        <!---->
+        <!--// invoke methods on the proxy (executed on the server)-->
+        <!--System.out.println("Mixin says: " + mixin.test1());-->
+        <!---->
+        <!--// close the proxy (close() must always be called)-->
+        <!--remoteProxy.close();-->
+        <!--...-->
+        <!--                                ]]></source>-->
+        <!--                            </p>-->
+        <!--                        </li>-->
+        <!--                        <br/>-->
+        <!--                        <li>-->
+        <!--                            create an instance of some class on the server-side, wrap it with a-->
+        <!--                            <code>RemoteProxy</code> and send to the client over the wire.-->
+        <!--                            The client then have access to this specific instance on the server.-->
+        <!--                            <p>-->
+        <!--                                <b>Server side:</b>-->
+        <!--                                <source><![CDATA[-->
+        <!--    ...-->
+        <!--    // wrap an instance in a remote proxy on the server-side and send it to the client-->
+        <!--    RemoteProxy remoteProxy = RemoteProxy.createServerProxy(anotherMixinInstance, "localhost", 7777);-->
+        <!--    return remoteProxy;-->
+        <!--}-->
+        <!--                                ]]></source>-->
+        <!--                            </p>-->
+        <!--                            <p>-->
+        <!--                                <b>Client side:</b>-->
+        <!--                                <source><![CDATA[-->
+        <!--...-->
+        <!--// retrieve the proxy to the specific instance created on the server-->
+        <!--RemoteProxy remoteProxy = mixin.getMixin();-->
+        <!---->
+        <!--// retrieves the proxy to the instance on the server-->
+        <!--AnotherMixin anotherMixin = (AnotherMixin)remoteProxy.getInstance();-->
+        <!--...-->
+        <!--                                ]]></source>-->
+        <!--                            </p>-->
+        <!--                        </li>-->
+        <!--                    </ul>-->
+        <!--                </p>-->
+        <!--                <p>-->
+        <!--                    A sample have been provided and can be found in the-->
+        <!--                    <code>src/samples/examples/connectiviy</code>-->
+        <!--                    directory. Start by taking a look at the-->
+        <!--                    <code>Client.java</code> class.-->
+        <!--                    You can run the sample by executing-->
+        <!--                    <code>ant samples:remote:server</code>-->
+        <!--                    to start up the server and then in another console execute-->
+        <!--                    <code>ant samples:remote:client</code> to start the client.-->
+        <!--                    (When you close down the server using-->
+        <!--                    <code>^C</code> then the server listener-->
+        <!--                    threads are still hanging so you need to close down them manually.)-->
+        <!--                </p>-->
+        <!--            </subsection>-->
+        <!--            <subsection name="Server side">-->
+        <!--                <p>-->
+        <!--                    The remote proxy server is a multi-threaded production-ready implementation that-->
+        <!--                    is ready to serve any number of incoming requests. To configure the server settings-->
+        <!--                    (number of listener threads, max/min/init size of the thread pool, backlog etc.)-->
+        <!--                    you have to change the settings in the in the-->
+        <!--                    <code>aspectwerkz.properties</code>-->
+        <!--                    resource bundle and put it on the classpath. If no bundle is found default-->
+        <!--                    values are used.-->
+        <!--                </p>-->
+        <!--                <p>-->
+        <!--                    The server resource bundle has the following format/options:-->
+        <!--                    <source><![CDATA[-->
+        <!--remote.server.hostname=localhost-->
+        <!--remote.server.port=7777-->
+        <!--remote.server.client.threads.timeout=60000-->
+        <!--remote.server.listener.threads.nr=10-->
+        <!--remote.server.listener.threads.backlog=200-->
+        <!--remote.server.listener.threads.run.as.daemon=false-->
+        <!--remote.server.thread.pool.type=bounded # possible types are bounded or dynamic-->
+        <!--remote.server.thread.pool.max.size=100-->
+        <!--remote.server.thread.pool.init.size=10-->
+        <!--remote.server.thread.pool.min.size=10-->
+        <!--remote.server.thread.pool.keep.alive.time=300000-->
+        <!--remote.server.thread.pool.wait.when.blocked=true-->
+        <!--remote.server.invoker.classname=-->
+        <!--                    ]]></source>-->
+        <!--                </p>-->
+        <!--                <p>-->
+        <!--                    To enable support for RPC in the-->
+        <!--                    <code>AspectWerkz</code> system you have to feed-->
+        <!--                    the JVM with the-->
+        <!--                    <code>-Daspectwerkz.remote.server.run=true</code> option.-->
+        <!--                </p>-->
+        <!--                <p>-->
+        <!--                    If you have specific requirements. For example if you want to handle the user-->
+        <!--                    context that you (optionally) can set on the client-->
+        <!--                    <code>RemoteProxy</code>-->
+        <!--                    and have sent over or have other requirements on how you want to invoke you-->
+        <!--                    objects then you can create your own implementation of the-->
+        <!--                    <code>org.codehaus.aspectwerkz.connectivity.Invoker</code> interface and-->
+        <!--                    specify the implementation in the aspectwerkz.properties resource bundle using-->
+        <!--                    the-->
+        <!--                    <code>remote.server.invoker.classname=..</code> option. For an example-->
+        <!--                    implementation see the-->
+        <!--                    <code>org.codehaus.aspectwerkz.System.getDefaultInvoker()</code> method.-->
+        <!--                </p>-->
+        <!--            </subsection>-->
+        <!--        </section>-->
+
+    </body>
+</document>

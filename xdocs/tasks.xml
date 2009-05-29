@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <title>Tasks</title>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+    </properties>
+    <body>
+        <section name="Tasks">
+            <p>
+                <code>AspectWerkz</code> uses JIRA for issue tracking.
+                Browse to
+                <a href="http://jira.codehaus.org/secure/BrowseProject.jspa?id=10105">this page</a>
+                to view the task list and other issues.
+            </p>
+            <p>
+                To create a new issue browse to
+                <a href="http://jira.codehaus.org/secure/CreateIssue.jspa">this page</a> and choose
+                AspectWerkz.
+            </p>
+        </section>
+    </body>
+</document>

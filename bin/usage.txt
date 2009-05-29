@@ -1,0 +1,18 @@
+AspectWerkz 2.1 (c) 2002-2005 Jonas Bonér, Alexandre Vasseur
+
+Usage: aspectwerkz [-options] <main class> [args...]
+       aspectwerkz [-options] -jar <jar file> [args...]
+       aspectwerkz -offline <definition file> <options> [-cp <classpath>]* <target to transform>+
+
+   options         (optional) standard JVM options, e.g. -cp or -D...
+   <main class>               class to execute
+   -jar <jar file>            jar file to execute
+   args            (optional) program arguments
+
+   -offline                   offline transformation of classes (post-process)
+   <definition file>          path to the definition file
+   <options>                  -verbose, -verify, -haltOnError, -genjp, -details
+   <classpath>                classpath needed for compilation but not to be
+                              transformed (eg -cp myAspects.jar;servletAPI.jar)
+   <target to transform>      classes to transform, jar or zip file
+

@@ -1,0 +1,16 @@
+<!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="proxy-sample">
+        <aspect class="samples.tracing.TracingAspect">
+            <pointcut name="methodsToLog" expression="execution(* samples.tracing.Trace*.*(..)) || execution(samples.tracing.Trace*.new(..))"/>
+            <advice name="logMethod(StaticJoinPoint)" type="around" bind-to="methodsToLog"/>
+            <advice name="logBefore(StaticJoinPoint)" type="before" bind-to="methodsToLog"/>
+            <advice name="logAfter(StaticJoinPoint)" type="after" bind-to="methodsToLog"/>
+            <!-- would make sense to use annotation definition instead, and Java 5... -->
+            <advice name="logBeforeArgs(StaticJoinPoint joinPoint, samples.tracing.Trace$Target t, samples.tracing.Trace$Target arg)" type="before"
+                bind-to="execution(* samples.tracing.Trace*.*(..)) AND this(t) AND args(arg)"/>
+        </aspect>
+    </system>
+</aspectwerkz>

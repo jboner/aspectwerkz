@@ -1,0 +1,17 @@
+<!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="spring">
+        <aspect class="test.spring.aspect.MyAfterReturningAdvice">
+             <advice name="afterReturning"
+                 type="after returning"
+                 bind-to="execution(long test.spring.Test.adviseAfterReturning())"/>
+         </aspect>
+        <aspect class="test.spring.aspect.MyBeforeAdvice">
+             <advice name="before"
+                 type="before"
+                 bind-to="execution(long test.spring.Test.adviseBefore())"/>
+         </aspect>
+    </system>
+</aspectwerkz>

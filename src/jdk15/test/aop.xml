@@ -1,0 +1,50 @@
+<!DOCTYPE aspectwerkz PUBLIC "-//AspectWerkz//DTD//EN" "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="jdk5test">
+        <aspect class="test.deployment.HotdeployableAspect"/>
+        <aspect class="test.FieldGetOutOfWeaver$Aspect"/>
+        <aspect class="test.InterfaceDefinedMethodTest$Aspect"/>
+        <aspect class="test.CtorExecution$Aspect"/>
+        <aspect class="test.CflowBelowTest$Aspect"/>
+
+        <mixin class="test.MixinTest$CounterImpl"/>
+        <aspect class="test.LineNumberTest$Aspect"/>
+        <aspect class="test.CustomProceedChangeTargetTest$Aspect"/>
+        <aspect class="test.PerInstanceSerializationTest$TestAspect"/>
+
+        <aspect name="Aspect_1" class="test.QNameTest$TestAspect">
+            <param name="p" value="1"/>
+        </aspect>
+        <aspect name="Aspect_2" class="test.QNameTest$TestAspect">
+            <param name="p" value="2"/>
+        </aspect>
+        <aspect class="test.QNameTest$AspectJVM"/>
+        <aspect class="test.QNameTest$AspectClass"/>
+        <aspect class="test.QNameTest$AspectInstance"/>
+        <aspect class="test.QNameTest$AspectGC"/>
+
+        <aspect class="test.AfterReturningThrowingTest$Aspect"/>
+        <aspect class="test.AfterReturningThrowingTest$XmlAspect">
+            <pointcut name="greetMethod" expression="execution(* test.AfterReturningThrowingTest.greet(..))"/>
+            <advice name="beforeGreeting" type="before" bind-to="greetMethod"/>
+            <advice name="afterGreeting" type="after returning" bind-to="greetMethod"/>
+            <advice name="afterGreeting(JoinPoint jp, java.lang.Exception ex)" type="after throwing(ex)" bind-to="greetMethod"/>
+        </aspect>
+
+<!--        notes:-->
+<!--        Foo is inner of CustomProceedChangeTargetTest-->
+<!--        Aspect2 is inner of CustomProceedChangeTargetTest-->
+<!--        CustomJp3 is inner of Aspect2-->
+        <aspect class="test.CustomProceedChangeTargetTest$Aspect2">
+            <advice type="around"
+                name="around3(test.CustomProceedChangeTargetTest$Aspect2$CustomJp3 jp, test.CustomProceedChangeTargetTest$Foo foo)"
+                bind-to="execution(int test.CustomProceedChangeTargetTest.changeArg(test.CustomProceedChangeTargetTest$Foo)) AND args(foo)"/>
+        </aspect>
+
+        <aspect class="test.priv.PrivateCtorTest$TestAspect"/>
+        <aspect class="test.FieldFromInterfaceTest$TestAspect"/>
+
+        <aspect class="test.bugs.interfacesubtypebug.TestAspect"/>
+
+    </system>
+</aspectwerkz>

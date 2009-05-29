@@ -1,0 +1,11 @@
+<!DOCTYPE aspectwerkz PUBLIC "-//AspectWerkz//DTD//EN" "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+	<system id="tests">
+		<aspect 	class="test.staticinitialization.StaticInitializationAspect"
+					deployment-model="perClass"/>
+
+		<aspect 	class="test.withincode.WithincodeStaticinitializationAspect"
+					deployment-model="perClass"/>
+		
+	</system>
+</aspectwerkz>

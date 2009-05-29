@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<document>
+    <properties>
+        <title>Build</title>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+    </properties>
+    <body>
+        <section name="Building from sources">
+            <p>
+                Check out the
+                <a href="cvs.html">CVS repository</a> and build
+                it with
+                <a href="http://ant.apache.org/">Ant</a>.
+            </p>
+            <p>
+                Set JAVA_HOME and ASPECTWERKZ_HOME environment variables.
+            </p>
+            <p>
+                Useful goals:
+                <ul>
+                    <li>
+                        build distribution including sample jars:
+                        <p/>
+                        <code>ant dist</code>.
+                    </li>
+                    <br/>
+                    <li>
+                        run the tests:
+                        <p/>
+                        <code>ant test</code>
+                    </li>
+                    <br/>
+                    <li>
+                        run examples:    
+                        <p/>
+                        <code>ant samples:&lt;name_of_example&gt;</code>
+                    </li>
+                </ul>
+            </p>
+            <p>
+                You can also download the distribution from the
+                <a href="releases.html">Releases</a> page.
+            </p>
+        </section>
+        <section name="Install">
+            <p>
+                <ul>
+                    <li>
+                        Make sure that
+                        <code>JAVA_HOME</code> is set.
+                    </li>
+                    <br/>
+                    <li>
+                        Set the
+                        <code>ASPECTWERKZ_HOME</code> variable to point
+                        to the root of the distribution (this step is not mandatory. It is required if you
+                        plan to use the ASPECTWERKZ_HOME/bin script and/or the Ant build script to run the samples
+                        or re-build the project).
+                    </li>
+                    <br/>
+                    <li>
+                        Add
+                        <code>ASPECTWERKZ_HOME/bin</code> to your path (this step is not mandatory. It is required if you
+                        plan to use the ASPECTWERKZ_HOME/bin script and/or the Ant build script to run the samples
+                        or re-build the project).
+                    </li>
+                </ul>
+            </p>
+        </section>
+    </body>
+</document>

@@ -1,0 +1,978 @@
+<?xml version="1.0"?>
+
+<document>
+
+    <properties>
+
+        <title>Examples</title>
+
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+
+        <author email="alex at gnilux dot com">alexandre vasseur</author>
+
+    </properties>
+
+    <body>
+
+        <section name="Table of Contents">
+
+            <p>
+
+                <ol>
+
+                    <li>
+
+                        <a href="#Introduction">Introduction</a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="#Call and Execution pointcuts + Around and Before advice">Call and Execution pointcuts + Around advice</a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="#Set and Get pointcuts + Aspect inheritance">Set and Get pointcuts + Aspect inheritance</a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="#Implementation introductions">Implementation introductions</a>
+
+                    </li>
+
+                    <li>
+                        <a href="#Control flow (cflow) pointcuts">Control flow (cflow) pointcuts</a>
+                    </li>
+                    <li>
+                        <a href="#Handler pointcuts">Handler pointcuts (catch clauses)</a>
+                    </li>
+
+                    <li>
+
+                        <a href="#Annotation driven AOP">Annotation driven AOP (matching on Annotations)</a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="Java 5 Annotations">Java 5 Annotations</a>
+
+                    </li>
+
+                    <li>
+
+                        <a href="#XML definition file for the examples">XML definition file for the examples</a>
+
+                    </li>
+
+                </ol>
+
+            </p>
+
+        </section>
+
+        <section name="Introduction">
+
+            <p>
+
+                Here are some simple examples to get you going.
+
+                All examples together with ready to execute tests are to be found in the
+
+                source distribution under
+
+                <code>src/samples/examples</code>. They are all defined using the same definition file
+
+                <code>aop.xml</code>
+
+            </p>
+
+        </section>
+
+        <section name="Call and Execution pointcuts + Around advice">
+
+            <p>
+
+                This aspect implements a simple caching service. It caches
+
+                the results from the method invocations that are picked out
+
+                by the pointcuts mapped to the advice.
+
+            </p>
+
+            <p>
+
+                To run the example type:
+
+                <code>ant samples:caching</code>
+
+            </p>
+
+            <source><![CDATA[
+
+ /**
+
+  * @Aspect perInstance
+
+  */
+
+ public class CachingAspect {
+
+
+
+    /**
+
+     * The cross-cutting info.
+
+     */
+
+    private final CrossCuttingInfo m_info;
+
+
+
+    /**
+
+     * We are interested in cross-cutting info, therefore we have added a constructor that takes a cross-cutting info
+
+     * instance as its only parameter.
+
+     *
+
+     * @param info the cross-cutting info
+
+     */
+
+    public CachingAspect(final CrossCuttingInfo info) {
+
+        m_info = info;
+
+    }
+
+
+
+    /**
+
+     * @Before call(int examples.caching.Pi.getPiDecimal(int)) &&
+
+     *         withincode(int examples.caching.main(String[]))
+
+     */
+
+     public void invocationCounter(final JoinPoint joinPoint) throws Throwable {
+
+         MethodSignature signature = (MethodSignature)joinPoint.getSignature();
+
+         CacheStatistics.addMethodInvocation(
+
+                 signature.getName(),
+
+                 signature.getParameterTypes()
+
+         );
+
+     }
+
+
+
+     /**
+
+      * @Around execution(int examples.caching.Pi.getPiDecimal(int))
+
+      */
+
+     public Object cache(final JoinPoint joinPoint) throws Throwable {
+
+        MethodRtti rtti = (MethodRtti)joinPoint.getRtti();
+
+
+
+        final Long hash = new Long(calculateHash(rtti));
+
+        final Object cachedResult = m_cache.get(hash);
+
+
+
+        if (cachedResult != null) {
+
+            System.out.println("using cache");
+
+            CacheStatistics.addCacheInvocation(rtti.getName(), rtti.getParameterTypes());
+
+
+
+            System.out.println("parameter: timeout = " + m_info.getParameter("timeout"));
+
+
+
+            return cachedResult;
+
+        }
+
+        final Object result = joinPoint.proceed();
+
+
+
+        m_cache.put(hash, result);
+
+        return result;
+
+     }
+
+
+
+    // ============ Utility methods ============
+
+
+
+    ...
+
+
+
+    protected Map m_cache = new HashMap();
+
+}
+
+            ]]></source>
+
+        </section>
+
+        <section name="Set and Get pointcuts + Aspect inheritance">
+
+            <p>
+
+                This aspect implements a simple logging service.
+
+                It logs the entry and exit of the methods that are picked
+
+                out by the pointcuts mapped to the advice. In this simple
+
+                example we are only using a small subset of all the metadata
+
+                available from the join point.
+
+            </p>
+
+            <p>
+
+                To run the example type:
+
+                <code>ant samples:logging</code>
+
+                It is possible to run this sample using offline weaving thru
+
+                <code>ant samples:offline:logging</code>
+
+            </p>
+
+            <p>
+
+                An abstract aspect is provided. By extending the abstract aspect we just need to define the pointcuts
+
+                to refine the metadata that defines the pointcuts where logging concern has to be bounded.
+
+                Note that no pointcut needs to be defined in the abstract aspect.
+
+            </p>
+
+            <source><![CDATA[
+
+public abstract class AbstractLoggingAspect {
+
+
+
+    private int m_level = 0;
+
+
+
+    /**
+
+     * @Around methodsToLog1 || methodsToLog2 || methodsToLog3
+
+     */
+
+    public Object logMethod(final JoinPoint joinPoint) throws Throwable {
+
+        MemberSignature signature = (MemberSignature)joinPoint.getSignature();
+
+        indent();
+
+        System.out.println("--> " + joinPoint.getTargetClass().getName() + "::" + signature.getName());
+
+        m_level++;
+
+        final Object result = joinPoint.proceed();
+
+        m_level--;
+
+        indent();
+
+        System.out.println("<-- " + joinPoint.getTargetClass().getName() + "::" + signature.getName());
+
+        return result;
+
+    }
+
+
+
+    /**
+
+     * @Before logSet || logGet
+
+     */
+
+    public void logEntry(final JoinPoint joinPoint) throws Throwable {
+
+        MemberSignature signature = (MemberSignature)joinPoint.getSignature();
+
+        System.out.println("ENTER: " + joinPoint.getTargetClass().getName() + "::" + signature.getName());
+
+    }
+
+
+
+    /**
+
+     * @After logSet || logGet
+
+     */
+
+    public void logExit(final JoinPoint joinPoint) throws Throwable {
+
+        MemberSignature signature = (MemberSignature)joinPoint.getSignature();
+
+        System.out.println("EXIT: " + joinPoint.getTargetClass().getName() + "::" + signature.getName());
+
+    }
+
+
+
+    private void indent() {
+
+        for (int i = 0; i < m_level; i++) {
+
+            System.out.print("  ");
+
+        }
+
+    }
+
+}
+
+
+
+/**
+
+ * The concrete Aspect just defines the pointcut following the naming convention
+
+ * the abstract Aspect has defined.
+
+ */
+
+public class LoggingAspect extends AbstractLoggingAspect {
+
+
+
+    // ============ Pointcuts ============
+
+
+
+    /**
+
+     * @Expression execution(* examples.logging.Target.toLog1(..))
+
+     */
+
+    Pointcut methodsToLog1;
+
+
+
+    /**
+
+     * @Expression execution(* examples.logging.Target.toLog2(..))
+
+     */
+
+    Pointcut methodsToLog2;
+
+
+
+    /**
+
+     * @Expression execution(* examples.logging.Target.toLog3(..))
+
+     */
+
+    Pointcut methodsToLog3;
+
+
+
+    /**
+
+     * @Expression get(int examples.logging.Target.m_*)
+
+     */
+
+    Pointcut logGet;
+
+
+
+    /**
+
+     * @Expression set(int examples.logging.Target.m_*)
+
+     */
+
+    Pointcut logSet;
+
+}
+
+            ]]></source>
+
+        </section>
+
+        <section name="Implementation introductions">
+
+            <p>
+
+                This example shows both how implementation introductions (Mixins) are implemented.
+
+            </p>
+
+            <p>
+
+                To run the example type:
+
+                <code>ant samples:introduction</code>
+
+                <br/>
+
+                The example makes use of mixin inheritance within aspect
+
+                inheritance. Moreover, the concrete aspect hides the introduced interface by using
+
+                the
+
+                <i>implicit</i> interface lookup (introduced interface are looked for in the mixin
+
+                implementation hierarchy).
+
+                <br/>
+
+                You can also note the deployment models. The mixin is perInstance whereas the aspect is perClass,
+
+                thus you have to call the right methods to retrieve the target instance (since there is none attached to the aspect).
+
+            </p>
+
+            <p>
+
+                Note: if you add more than one
+
+                <code>Introduction</code> to a class
+
+                then
+
+                <b>you</b> have to make sure that the names of the methods
+
+                do not collide.
+
+                <source><![CDATA[
+
+public abstract class AbstractIntroductionAspect {
+
+
+
+    /**
+
+     * The Introduce doclet is not necessary here. This aspect provides a half completed mixin impl (abstract one)
+
+     */
+
+    public static abstract class MyImpl implements Mixin {
+
+        public String sayHello1() {
+
+            return "Hello World!";
+
+        }
+
+    }
+
+}
+
+
+
+public class IntroductionAspect extends AbstractIntroductionAspect {
+
+
+
+    /**
+
+     * @Mixin(pointcut="within(examples.introduction.Target)",
+
+     *        deploymentModel="perInstance")
+
+     */
+
+    public static class MyConcreteImpl extends MyImpl {
+
+
+
+        /**
+
+         * The cross-cutting info.
+
+         */
+
+        private final CrossCuttingInfo m_info;
+
+
+
+        /**
+
+         * We are interested in cross-cutting info, therefore we have added a constructor that takes a cross-cutting infor
+
+         * instance as its only parameter.
+
+         *
+
+         * @param info the cross-cutting info
+
+         */
+
+        public MyConcreteImpl(final CrossCuttingInfo info) {
+
+            m_info = info;
+
+        }
+
+
+
+        public String sayHello2() {
+
+            System.out.println("mixin target class: " + m_info.getMixinTargetClass(this));
+
+            System.out.println("mixin target instance: " + m_info.getMixinTargetInstance(this));
+
+            return "Hello World! Hello World!";
+
+        }
+
+    }
+
+}]]></source>
+
+                As you can see neither the interface nor the implementation class
+
+                needs to implement a certain interface or extend a certain class.
+
+            </p>
+
+            <p>
+
+                Now you will be able to invoke your
+
+                <code>Introduction</code>
+
+                like this:
+
+                <source><![CDATA[
+
+public class Target {
+
+    ...
+
+    System.out.println("The mixin says: " + ((Mixin)this).sayHello2());
+
+    ...
+
+}]]></source>
+
+            </p>
+
+        </section>
+
+        <section name="Control flow (cflow) pointcuts">
+            <p>
+                This example shows how control flow (cflow) pointcuts are implemented.
+            </p>
+            <p>
+                To run the example type:
+                <code>ant samples:cflow</code>
+                <br/>
+            </p>
+            <p>
+                In this example we have two methods
+                <code>step1</code> and
+                <code>step2</code>
+                in which
+                <code>step1</code> calls
+                <code>step2</code>.
+            </p>
+            <p>
+                The advices at the step2
+                <code>@Execution</code> pointcut will only be triggered if we are in the
+                control flow of the
+                <code>@cflow</code> pointcut called cflowPointcut, e.g. the
+                method
+                <code>step1</code>. Otherwise the advice should be skipped.
+                <br/>
+                Note the
+                <code>&amp;&amp;</code> expression to express the cflow algebraic.
+            </p>
+            <p>
+                <source><![CDATA[
+public class CFlowAspect {
+
+    /**
+     * @Around cflow(call(void examples.cflow.Target.step1())) && execution(void examples.cflow.Target.step2())
+     */
+    public Object logMethod(final JoinPoint joinPoint) throws Throwable {
+        Object result = joinPoint.proceed();
+        System.out.println("  - invoking advice triggered by step2");
+        return result;
+    }
+}]]></source>
+            </p>
+        </section>
+        <section name="Handler pointcuts">
+            <p>
+                This example shows how catch clauses be intercepted with
+                <code>@Handler</code> pointcut.
+            </p>
+            <p>
+                To run the example type:
+                <code>ant samples:exception</code>
+                <br/>
+            </p>
+            <p>
+                <source><![CDATA[
+public class ExceptionHandler {
+
+    /**
+     * @Before handler(java.lang.Exception+) &&
+     *         withincode(public static void examples.exception.Target.main(String[]))
+     */
+    public void handleException(final JoinPoint joinPoint) throws Throwable {
+        // handle the exception
+        CatchClauseRtti rtti = (CatchClauseRtti)joinPoint.getRtti();
+        Exception e = (Exception)rtti.getParameterValue();
+        ...
+    }
+}
+                ]]></source>
+            </p>
+        </section>
+
+        <section name="Annotation driven AOP">
+
+            <p>
+
+                This examples shows Annotation driven AOP - that is matching on Annotations.
+
+                The current samples relies on the provided Java 1.4 strongly typed annotations framework but the same
+
+                concepts can easily be applied for Java 5 Annotations (as supported in AspectWerkz 2.0).
+
+            </p>
+
+            <p>
+
+                To run the example type:
+
+                <code>and samples:annotation</code> or <code>ant samples:offline:annotation</code> to see it running using
+
+                post compilation (offline weaving instead of load time weaving).
+
+            </p>
+
+            <p>
+
+                <b>What do we want to achieve ?</b><br/>
+
+                We want to apply advices on method not based on their name or signature but based on the annotations. Given the
+
+                following sample class, we would like to apply an advice for all methods annotated with <code>@examples.annotation.AnnotationA</code>
+
+                and another advice for all methods annotated with bot <code>@examples.annotation.AnnotationA</code> and <code>@examples.annotation.AnnotationB</code>:
+
+                <source><![CDATA[
+
+public class Target {
+
+
+
+    /**
+
+     * @examples.annotation.AnnotationA
+
+     * @examples.annotation.AnnotationB
+
+     */
+
+    public void targetAB() {
+
+        System.out.println("Target.target AB ");
+
+    }
+
+
+
+    /**
+
+     * @examples.annotation.AnnotationA
+
+     */
+
+    public void targetA() {
+
+        System.out.println("Target.target A");
+
+    }
+
+
+
+    public void target() {
+
+        System.out.println("Target.target");
+
+    }
+
+}
+
+               ]]></source>
+
+            </p>
+
+            <p>
+
+                <b>Annotation handling for Java 1.4</b><br/>
+
+                Since we are using Java 1.4 in this sample, the annotations appears in JavaDoc. Nevertheless, AspectWerkz provides a
+
+                way to treat those annotation as in Java 5 and have runtime access to them thru a strongly typed API
+
+                (read <a href="annotations.html">here</a>).
+
+                In this sample, the annotations do not have any particular values. We will then use untyped annotations.
+
+                We first need to run the <code>AnnotationC</code> compiler so that those Annotations gets self-embedded in
+
+                the compiled class <code>.class</code> file. Before doing so, we need to write our property file to say to the
+
+                system what are the annotations used (and distinguished those from <code>@author</code> for example, that we don't
+
+                want at runtime (similar to the <i>retention policy</i> in Java 5).
+
+                <source><![CDATA[
+
+#
+
+# annotation.properties file
+
+#
+
+
+
+# examples.annotation are untyped, we don't need a proxy
+
+
+
+examples.annotation.AnnotationA
+
+examples.annotation.AnnotationB
+
+                ]]></source>
+
+                Invoke AnnotationC with Ant or programmatically at your convenience. Notice the <code>-custom ...annotation.properties</code>
+
+                argument to point to the annotation properties file.
+
+                <source><![CDATA[
+
+<target name="samples:annotationc">
+
+    <java fork="true" classname="org.codehaus.aspectwerkz.annotation.AnnotationC">
+
+        <classpath>
+
+            <path refid="project.class.path"/>
+
+            <pathelement path="${samples.classes}"/>
+
+        </classpath>
+
+        <arg line="-verbose -src ${basedir}/src/samples -classes ${basedir}/target/samples-classes -custom ${basedir}/src/samples/annotation.properties"/>
+
+    </java>
+
+</target>
+
+                ]]></source>
+
+            </p>
+
+            <p>
+
+                <b>Aspect that match on those annotations</b>
+
+                Now we need to write our pointcuts and advice that match on those annotations. The syntax is straightforward:
+
+                <source><![CDATA[
+
+public static class AnnotationMatchAspect {
+
+
+
+    /**
+
+     * @Before execution(@examples.annotation.AnnotationA * examples.annotation.Target.*(..))
+
+     * @param jp
+
+     */
+
+    public void beforeA(JoinPoint jp) {
+
+        System.out.println("Target$AnnotationMatchAspect.beforeA");
+
+    }
+
+
+
+    /**
+
+     * @Before execution(@examples.annotation.AnnotationB * examples.annotation.Target.*(..))
+
+     * @param jp
+
+     */
+
+    public void beforeB(JoinPoint jp) {
+
+        System.out.println("Target$AnnotationMatchAspect.beforeB");
+
+    }
+
+}
+
+                ]]></source>
+
+            </p>
+
+            <p>
+
+                <b>Running the sample</b><br/>
+
+                Since we are using an annotation defined aspect, we need to run <code>AnnotationC</code> on the aspect class
+
+                itself to take care of the <code>@Before</code> and alike AspectWerkz provided annotations.<br/>
+
+                It is possible to run AnnotationC once on both the aspect(s) and the target application classes.
+
+                Then we need to write our little <code>aop.xml</code> file to tell the framework which aspect to use. We could redefine or define
+
+                new pointcuts in this XML as well (see <a href="xml_definition.html">here</a>)<br/>
+
+                For your convenience, everything is wrapped thru an ant target.<br/>
+
+                Run <code>ant samples:annotation</code>
+
+            </p>
+
+            <p>
+
+                <b>What about offline mode ?</b><br/>
+
+                If we wanted to use offline mode, the process would be the same: AnnotationC on both the aspect(s) [if needed] and the
+
+                target application classes, then invoke the <code>AspectWerkzC</code> post compiler, and then run your class as usual, passing the aop.xml file.<br/>
+
+                Run <code>ant samples:offline:annotation</code>
+
+            </p>
+
+        </section>
+
+        <section name="Java 5 Annotations">
+
+            <p>
+
+                A sample with Java 5 Annotations defined aspects can be run from
+
+                <code>ant samples:jdk5:callback</code>. For it to work you will need to
+
+                define <code>ASPECTWERKZ_HOME</code> as for others samples, and have the JDK 5
+
+                environment set up as your default java.
+
+            </p>
+
+            <p>
+
+                The source code for this sample is in <code>src/jdk15/samples/examples/callback</code>
+
+                and illustrates how to define an Aspect using Java 5 annotations.
+
+            </p>
+
+        </section>
+
+        <section name="XML definition file for the examples">
+
+            <p>
+
+                Here is the XML deployment descriptor file for the aspect examples above.
+
+            </p>
+
+            <source><![CDATA[
+
+<!DOCTYPE aspectwerkz PUBLIC
+
+    "-//AspectWerkz//DTD//EN"
+
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+
+
+
+<aspectwerkz>
+
+    <system id="samples">
+
+        <package name="examples">
+
+            <aspect class="caching.CachingAspect">
+
+                <param name="timeout" value="10"/>
+
+            </aspect>
+
+            <aspect class="logging.LoggingAspect"/>
+
+            <aspect class="introduction.IntroductionAspect"/>
+
+            <aspect class="cflow.CFlowAspect"/>
+
+            <aspect class="exception.ExceptionHandlingAspect"/>
+
+            <aspect class="annotation.Target$AnnotationMatchAspect"/>
+
+        </package>
+
+    </system>
+
+</aspectwerkz>
+
+            ]]></source>
+
+        </section>
+
+    </body>
+
+</document>

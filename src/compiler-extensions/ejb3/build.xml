@@ -1,0 +1,172 @@
+<?xml version="1.0"?>
+
+<!-- ==================================================================================== -->
+<!--  Copyright (c) Jonas Bonér, Alexandre Vasseur. All rights reserved.                  -->
+<!--  http://aspectwerkz.codehaus.org                                                     -->
+<!--  ==================================================================================  -->
+<!--  The software in this package is published under the terms of the LGPL style license -->
+<!--  a copy of which has been included with this distribution in the license.txt file.   -->
+<!--  ==================================================================================  -->
+
+<project name="AspectWerkz Compiler Extension For EJB3 interceptors" default="dist" basedir=".">
+
+    <path id="project.class.path">
+        <pathelement path="${java.home}/../lib/tools.jar"/>
+        <fileset dir="${basedir}/../../../lib">
+            <exclude name="jarjar*"/>
+            <exclude name="aspectwerkz-*.jar"/>
+            <include name="*.jar"/>
+        </fileset>
+        <!-- external classpath -->
+        <pathelement path="${java.class.path}"/>
+    </path>
+
+    <path id="project.ext.path">
+        <fileset dir="${basedir}/../../../lib">
+            <include name="aspectwerkz-*.jar"/>
+        </fileset>
+        <!-- external classpath -->
+        <pathelement path="${java.class.path}"/>
+    </path>
+
+    <path id="project.src.path">
+        <pathelement path="${basedir}/../../../src/main"/>
+        <pathelement path="${basedir}/../../../src/jdk15/main"/>
+    </path>
+
+    <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${basedir}/../../../lib/jarjar-0.3.jar"/>
+
+    <!-- =================================================== -->
+    <!--  initializes parameters  -->
+    <!-- =================================================== -->
+    <target name="init">
+        <property name="name" value="aw-ext-ejb3"/>
+        <property name="version" value="0.1"/>
+        <property name="basedir" value="."/>
+        <property name="src.dir" value="${basedir}/src"/>
+        <property name="test.src.dir" value="${basedir}/src/test"/>
+        <property name="build.dir" value="${basedir}/target"/>
+        <property name="build.core.dir" value="${build.dir}/classes"/>
+        <property name="build.test.dir" value="${build.dir}/test-classes"/>
+        <property name="javac.debug" value="on"/>
+        <property name="javac.deprecation" value="on"/>
+        <property name="javac.optimize" value="off"/>
+        <property name="javac.depend" value="off"/>
+        <property name="javac.verbose" value="off"/>
+
+        <!-- os specific -->
+        <condition property="pathseparator" value=";">
+            <os family="dos"/>
+        </condition>
+        <condition property="executableSuffix" value=".bat">
+            <os family="dos"/>
+        </condition>
+        <!-- os specific -->
+        <condition property="pathseparator" value=":">
+            <not>
+                <os family="dos"/>
+            </not>
+        </condition>
+        <condition property="executableSuffix" value="">
+            <not>
+                <os family="dos"/>
+            </not>
+        </condition>
+        <property name="aw.home" value="${basedir}/../../../"/>
+        <property name="target.dir" value="${basedir}/target"/>
+        <property name="lib.dir" value="${basedir}/lib"/>
+        <property name="bin.dir" value="${basedir}/bin"/>
+        <property name="main.classes" value="${target.dir}/classes"/>
+        <property name="test.classes" value="${target.dir}/test-classes"/>
+        <property name="project.name" value="aspectwerkz"/>
+        <property environment="env"/>
+        <condition property="jdk15" value="yes">
+            <contains string="${java.version}" substring="1.5"/>
+        </condition>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- clean -->
+    <!-- ============================================================== -->
+    <target name="clean" depends="init">
+        <delete dir="${build.core.dir}"/>
+        <delete dir="${build.test.dir}"/>
+        <delete dir="${build.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.core.dir}"/>
+        <mkdir dir="${build.test.dir}"/>
+    </target>
+
+    <!-- ============================================================== -->
+    <!-- compiles the distribution  -->
+    <!-- ============================================================== -->
+    <target name="compile" depends="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.core.dir}"/>
+        <javac destdir="${build.core.dir}" debug="on">
+            <src path="${src.dir}/main"/>
+            <sourcepath refid="project.src.path"/>
+            <classpath>
+                <path refid="project.class.path"/>
+            </classpath>
+        </javac>
+        <jarjar destfile="${build.dir}/main.jar">
+            <fileset dir="${build.core.dir}"/>
+            <rule pattern="org.objectweb.asm.**" result="org.codehaus.aspectwerkz.@0"/>
+        </jarjar>
+        <unjar src="${build.dir}/main.jar" dest="${build.core.dir}" overwrite="true"/>
+    </target>
+
+
+    <!-- ============================================================== -->
+    <!-- compiles the tests -->
+    <!-- ============================================================== -->
+    <target name="compile:test" depends="init, compile">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${build.test.dir}"/>
+        <javac destdir="${build.test.dir}" debug="on">
+            <src path="${test.src.dir}"/>
+            <classpath>
+                <pathelement path="${build.core.dir}"/>
+                <path refid="project.class.path"/>
+            </classpath>
+        </javac>
+    </target>
+
+
+    <!-- ============================================================== -->
+    <!-- compiles all -->
+    <!-- ============================================================== -->
+    <target name="compile:all" depends="init">
+        <antcall target="compile"/>
+        <antcall target="compile:test"/>
+    </target>
+
+    <target name="all" depends="compile:all"/>
+
+    <!-- ============================================================== -->
+    <!-- create distribution -->
+    <!-- ============================================================== -->
+    <target name="dist" depends="compile">
+        <jar destfile="${build.dir}/${name}-${version}.jar">
+            <fileset dir="${build.core.dir}"/>
+        </jar>
+    </target>
+
+
+    <!-- ============================================================== -->
+    <!-- run the tests -->
+    <!-- ============================================================== -->
+    <target name="test" depends="compile:test" if="jdk15">
+        <java fork="true" classname="test.ejb3.Sample">
+            <jvmarg line="-javaagent:${aw.home}/lib/aspectwerkz-jdk5-2.0.jar"/>
+            <classpath>
+                <pathelement path="target/classes"/>
+                <pathelement path="target/test-classes"/>
+                <path refid="project.class.path"/>
+                <path refid="project.ext.path"/>
+            </classpath>
+        </java>
+    </target>
+
+</project>

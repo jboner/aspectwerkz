@@ -1,0 +1,1354 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <title>Notes on the new 2.x architecture</title>
+    </properties>
+    <body>
+        <section name="Table of Contents">
+            <p>
+                <ol>
+                    <li>
+                        <a href="#Gotchas when migrating from 1.x to 2.x">Gotchas when migrating from 1.x to 2.x</a>
+                    </li>
+                    <li>
+                        <a href="#AspectWerkz 2: A Fast, Open and Dynamic Aspect Container">AspectWerkz 2: A Fast, Open and Dynamic Aspect Container</a>
+                    </li>
+                    <li>
+                        <a href="#AspectWerkz Extensible Aspect Container">AspectWerkz Extensible Aspect Container</a>
+                    </li>
+                    <li>
+                        <a href="#Hot deployment and undeployment of aspects">Hot deployment and undeployment of aspects</a>
+                    </li>
+                    <li>
+                        <a href="#Richer after advice semantics">Richer after advice semantics</a>
+                    </li>
+                    <li>
+                        <a href="#StaticJoinPoint, JoinPoint, EnclosingStaticJoinPoint">StaticJoinPoint, JoinPoint, EnclosingStaticJoinPoint</a>
+                    </li>
+                    <li>
+                        <a href="#this() and target()">this() and target()</a>
+                    </li>
+                    <li>
+                        <a href="#New annotation backend and Java 5 annotations support">New annotation backend and Java 5 annotations support</a>
+                    </li>
+                    <li>
+                        <a href="#New Mixin implementation">New Mixin implementation</a>
+                    </li>
+                    <li>
+                        <a href="#Retrieval of Aspect instances">Retrieval of Aspect instances</a>
+                    </li>
+                    <li>
+                        <a href="#Strongly typed proceed">Strongly typed proceed(..)</a>
+                    </li>
+                    <li>
+                        <a href="#staticinitialization() pointcut">staticinitialization() pointcut</a>
+                    </li>
+                    <li>
+                        <a href="#Per instance interception">Per instance interception</a>
+                    </li>
+                    <li>
+                        <a href="#AWProxy: proxy awareness of aspects">AWProxy: proxy awareness of aspects</a>
+                    </li>
+                </ol>
+            </p>
+        </section>
+        <section name="Gotchas when migrating from 1.x to 2.x">
+            <p>
+                <ul>
+                    <li>
+                        Build and develop for Java 5 -
+                        <br/>
+                        To build on Java 5 you will have to put the
+                        <code>./lib/aspectwerkz-jdk5-2.0.jar</code>
+                        on the classpath <b>instead of</b> <code>./lib/aspectwerkz-jdk14-2.0.jar</code>. Same if you want to run it inside an IDE, or use an Ant script.
+                        This jar contains the Java 5 implementations of the AspectWerkz annotations.
+                    </li>
+                    <br/>
+                    <li>
+                        No more
+                        <code>perThread</code> deployment model -
+                        <br/>
+                        We have removed the
+                        <code>perThread</code> deployment model for both aspects and mixins.
+                        It should have never been added in the first place. We are working on supporting the
+                        much more fine-grained and expressive
+                        <code>percflow</code> and
+                        <code>percflowbelow</code>.
+                    </li>
+                    <br/>
+                    <li>
+                        Currently no
+                        <code>perJVM</code> deployment model for mixins -
+                        <br/>
+                        This will most likely be added for the 2.0 final release.
+                    </li>
+                    <br/>
+                    <li>
+                        No more annotation proxies -
+                        <br/>
+                        This implementation has been replaced by a better one, in which you only have to write
+                        an interface that is very similar to a Java 5 annotation component.
+                        For details see
+                        <a href="#New annotation backend and Java 5 annotations support">this section</a>.
+                    </li>
+                    <br/>
+                    <li>
+                        New Mixin implementation -
+                        <br/>
+                        The Mixin implementation is completely new, both the way it is implemented and defined.
+                        For details see
+                        <a href="#New Mixin implementation">this section</a>.
+                    </li>
+                    <br/>
+                    <li>
+                        For mixin definition,
+                        <code>@Introduce</code> and
+                        <code>&lt;introduce ...&gt;</code> -
+                        <br/>
+                        has been replaced by
+                        <code>@Mixin</code> and
+                        <code>&lt;mixin ...&gt;</code> (child of &lt;system&gt; XML element)
+                    </li>
+                    <br/>
+                    <li>
+                        For interface only introduction,
+                        <code>@Implements</code> and
+                        <code>&lt;introduce ...&gt;</code> -
+                        <br/>
+                        Has been replaced by
+                        <code>@Introduce</code> and
+                        <code>&lt;introduce ...&gt;</code> (child of &lt;aspect&gt; XML element)
+                    </li>
+                    <br/>
+                    <li>
+                        Dynamic AOP requires AspectWerkz native library in
+                        <code>PATH</code> - unless using Java 5.
+                        <br/>
+                        To make use of the dynamic features, such as runtime deployment and undeployment, you
+                        need to have the AspectWerkz native library (*.dll, *.so or *.jnilib) in your
+                        <code>PATH</code>.
+                        These can be found
+                        <a href="http://aspectwerkz.codehaus.org/downloads/">here</a>.
+                        <br/>
+                        A consequence is that the dynamic tests will fail if you have not done this.
+                        The native library is not needed with Java 5.
+                    </li>
+                    <br/>
+                </ul>
+            </p>
+
+        </section>
+        <section name="AspectWerkz 2: A Fast, Open and Dynamic Aspect Container">
+
+            <p>
+                The
+                <code>AspectWerkz 2</code> architecture is a complete rewrite of the core weaver and container.
+            </p>
+            <p>
+                When we where designing the new architecture we had four different objectives:
+                <ul>
+                    <b>
+                        <li>Performance</li>
+                    </b>
+                    <p>
+                        The AspectWerkz weaver is now completely based on static compilation (no reflection at all), which
+                        means that the weaved code is
+                        <b>very</b> fast. We have released a simple microbenchmark that compares
+                        AspectWerkz with all the other major AOP implementations.
+                    </p>
+                    <p>
+                        We will publish a small paper in which where we compare the performance of
+                        all major AOP frameworks on some days.
+                    </p>
+
+                    <b>
+                        <li>Extensibility</li>
+                    </b>
+                    <p>
+                        The new container is very open and extensible. It allows plugging in different
+                        <i>Aspect Model Extensions</i>
+                        that allows running other AOP framework's aspect inside the
+                        <i>AspectWerkz Extensible Aspect Container</i>.
+                    </p>
+                    <p>Read more
+								<a href="http://www.theserverside.com/articles/article.tss?l=AspectWerkzP1">here</a>
+                    </p>
+
+                    <b>
+                        <li>Dynamicity</li>
+                    </b>
+                    <p>
+                        In
+                        <code>AspectWerkz 2</code> we allow the user to both hot-deploy and undeploy his aspect
+                        at runtime. This implementation is based on
+                        <i>HotSwap</i> and guarantees that the performance
+                        of the target application will be the same when an aspect has been undeployed as it was before
+                        it was deployed (either hot-deployed or at startup time).
+                    </p>
+                    <p>Read more
+                        <a href="dynamic_aop.html">here</a>
+                    </p>
+
+                    <b>
+                        <li>Feature complete</li>
+                    </b>
+                    <p>
+                        We have put a lot of effort into implementing the full semantics of AOP as defined by
+                        <i>AspectJ</i>.
+                    </p>
+                </ul>
+            </p>
+        </section>
+
+        <section name="AspectWerkz Extensible Aspect Container">
+            <p>
+                The last couple of years the Java AOP landscape has flourished. It has gone from one single implementation
+                (AspectJ), to a whole bunch of frameworks, each one with its own way of defining and instantiating its aspects
+                 and with its own weaver, runtime environment and tools. Even though having many ways of doing things is not
+                 necessary a bad thing, especially not in such early days of a new technology, it is not making it easier for
+                 new users of AOP and does not speed up its adoption.
+            </p>
+            <p>
+                When you look at most frameworks out there you can see that they have a lot in common, most of them share same
+                 semantics, life-cycle options etc. Most of them have re-implemented concepts introduced by AspectJ and in some
+                 cases introduced their own.
+            </p>
+            <p>
+                This is something that we have had in mind when we were designing the new AspectWerkz container and weaver and
+                 led us to an open architecture that was easy to extend, an architecture that formed the foundation for the
+                 AspectWerkz Extensible Aspect Container.
+            </p>
+            <p>
+                Basically it allows you to plug in extensions that can handle the framework specific details, while the common
+                 things are shared. What this brings you is a weaver and a container that can weave, deploy and run any aspect
+                 no matter how it is implemented and defined.
+            </p>
+            <p>
+                This introduces many advantages and opens for standardization on tools (development and runtime manageability).
+            </p>
+            <p>
+                Read more about this in the
+                <a href="http://www.theserverside.com/">TSS article</a>
+            </p>
+        </section>
+
+        <section name="Hot deployment and undeployment of aspects">
+            <p>
+                <code>AspectWerkz</code> supports both hot deployment and hot undeployment of aspects.
+                It utilizes HotSwap (Java 1.4) or JVMTI (Java 5) to redefine your application at runtime.
+                New aspects can be added to the running system and old ones can be redefined or removed at runtime.
+            </p>
+            <p>
+                All these services are accessed from the
+                <code>org.codehaus.aspectwerkz.transform.inlining.deployer.Deployer</code> class, which has a rich
+                set of services.
+            </p>
+            <subsection name="Deployment">
+                <p>
+                Deployment of aspects is done using one of the
+                    <code>Deployer.deploy(..)</code> methods.
+                </p>
+                <p>
+                    Here is the API for deployment of aspects (see details below):
+                    <source><![CDATA[
+DeploymentHandle deploy(Class aspect)
+
+DeploymentHandle deploy(Class aspect, ClassLoader deployLoader)
+
+DeploymentHandle deploy(Class aspect, DeploymentScope scope, ClassLoader deployLoader)
+
+DeploymentHandle deploy(Class aspect, String xmlDef)
+
+DeploymentHandle deploy(Class aspect, String xmlDef, ClassLoader deployLoader)
+
+DeploymentHandle deploy(Class aspect, String xmlDef, DeploymentScope scope)
+
+DeploymentHandle deploy(Class aspect, String xmlDef, DeploymentScope scope, ClassLoader deployLoader)
+                    ]]></source>
+                </p>
+                <p>
+                    <b>Details on the deployment API:</b>
+                </p>
+                <p>
+
+                    <ul>
+                        <li>
+                    The first three methods are for deployment of annotation defined aspects only and
+                    the last three for XML defined aspects (that can have annotations as well, if so then
+                    the XML definition will override the annotation definition, but apart from that they
+                    will merge).
+                        </li>
+                        <br/>
+                        <li>
+                    As you can see all methods returns a
+                            <code>DeploymentHandle</code>, read more about
+                    that in the section about deployment handles below.
+                        </li>
+                        <br/>
+                        <li>
+                    The class loader passed to the method is the class loader that you want the aspect to
+                    be deployed in. If no class loader is specified then it will use the loader that loaded
+                    the aspect class. (Note: the algorithm will
+                            <b>not</b> handle importing classes from one
+                    class loader to another so they need to be in the same hierarchy.)
+                        </li>
+                        <br/>
+                        <li>
+                    It is recommended that you pass a
+                            <code>DeploymentScope</code> to the
+                            <code>deploy</code>
+                    method if you want predictable and safe deployment. For details, see the section on deployment
+                    scopes below.
+                        </li>
+                    </ul>
+                </p>
+
+            </subsection>
+            <subsection name="Undeployment">
+                <p>
+                Undeployment of aspects is done using one of the
+                    <code>Deployer.undeploy(..)</code> methods.
+                </p>
+                <p>
+                    Here is the API for undeployment of aspects (see details below):
+                    <source><![CDATA[
+void undeploy(Class aspect)
+
+void undeploy(Class aspect, ClassLoader loader)
+
+void undeploy(DeploymentHandle deploymentHandle)
+                    ]]></source>
+                </p>
+                <p>
+                    <b>Details on the deployment API:</b>
+                </p>
+                <p>
+                    <ul>
+                        <li>
+                    You can undeploy an aspect by just specifying the aspect's class. This means that the
+                    aspect will be undeployed from the class loader that has loaded the aspect class.
+                        </li>
+                        <br/>
+                        <li>
+                    If you specify a class loader then the aspect will be undeployed from the class loader that
+                    is specified.
+                        </li>
+                        <br/>
+                        <li>
+                    If you specify a
+                            <code>DeploymentHandle</code> then all join points that where affected by
+                    the deployment event defined by the handle will be reverted to the state they where in
+                    before the deployment occured. This means that
+                            <b>you</b> need to keep track of order and
+                    dependencies etc. e.g. f.e. rollback all changes in the correct order etc.
+                        </li>
+                        <br/>
+                        <li>
+                    If an aspect that is being undeployed can not be found (e.g. is not deployed or is already
+                    undeployed) then nothing happens. No error is triggered.
+                        </li>
+                    </ul>
+                </p>
+
+            </subsection>
+            <subsection name="Deployment scopes">
+                <p>
+                The use of deployment scopes give you more predictable and safer deployment.
+                </p>
+                <p>
+                They are needed due to the fact that no JVMs today support schema redefinition when
+                redefining your classes.
+                </p>
+                <p>
+                This means that you have to define a special kind of pointcut that we call deployment scope,
+                which will prepare you application and advise the points that you are interested in doing
+                hot deployment on later.
+                </p>
+                <p>
+                You can then retrieve a handle to this deployment scope by getting
+                the actual instance of the abstraction and then use this to narrow down the scope of
+                the deployment so you are sure that you will not try to deploy the aspect at points in your
+                code that will not be affected. Hence you are garantueed that your aspect will be deployed at
+                valid points in your code.
+                </p>
+                <p>
+                    <b>Definition</b>
+                </p>
+                <p>
+                    You define the deployment scope just as regular pointcuts, in its own aspect or in the same
+                    aspect as the rest of your code:
+                    <source><![CDATA[
+@Expression("execution(String *.toString())")
+DeploymentScope toString;
+                    ]]></source>
+
+                    <source><![CDATA[
+<deployment-scope name="toString" expression="execution(String *.toString())"/>
+                    ]]></source>
+                </p>
+                <p>
+                    <b>Runtime retrieval</b>
+                </p>
+                <p>
+                    You can then retrieve the instance of the
+                    <code>DeploymentScope</code> like this:
+                    <source><![CDATA[
+DeploymentScope scope = SystemDefinition.getDefinitionFor(loader, systemId).getDeploymentScope("toString");
+                    ]]></source>
+                </p>
+            </subsection>
+            <subsection name="Deployment handles">
+                <p>
+                All
+                    <code>deploy(..)</code> methods returns a
+                    <code>DeploymentHandle</code> which is a handle to
+                the specific deployment event. You can use this handle to revert the changes made by the deployment,
+                In other words, it allows you to undeploy the aspect you deployed and be sure that it will be
+                undeployed exactly the way it was deployed, same class loader, same deployment scope etc.
+                </p>
+                <p>
+                    You retrieve it from one of the
+                    <code>deploy(..)</code> methods and can later use it when
+                    undeploying the aspect:
+                    <source><![CDATA[
+// deploy aspect
+DeploymentHandle handle = Deployer.deploy(..);
+
+// store the handle somewhere
+
+...
+
+
+// retrieve the handle from storage
+DeploymentHandle handle = ...
+
+// undeploy using handle
+Deployer.undeploy(handle);
+                    ]]></source>
+                </p>
+            </subsection>
+        </section>
+
+        <section name="Richer after advice semantics">
+            <p>
+                In previous releases of
+                <code>AspectWerkz</code> we only supported one single type of
+                <i>after advice</i>. The sematics of this type was that it was always executed, regardless
+                of wheter an exception had been throw or if the method returned successfully.
+            </p>
+            <p>
+                In the new 2.x architecture we have enhanced the semantics for this type of advice and have
+                borrow the semantics from
+                <code>AspectJ</code>. So now we support three different types
+                of
+                <i>after advice</i>:
+                <ul>
+                    <li>
+                        <code>@AfterFinally</code> (same as
+                        <code>@After</code>)
+                    </li>
+                    <li>
+                        <code>@AfterReturning [TYPE]</code> -
+                        <code>@AfterReturing(pointcut)</code> or
+                        <code>@AfterReturning(type=onReturnedType, pointcut=pointcut)</code>
+                    </li>
+                    <li>
+                        <code>@AfterThrowing [TYPE]</code> -
+                        <code>@AfterThrowing(pointcut)</code> or
+                        <code>@AfterThrowing(type=onThrownedType, pointcut=pointcut))</code>
+                    </li>
+                </ul>
+            </p>
+            <subsection name="after finally (after)">
+                <p>
+                    An
+                    <code>after finally</code> advice declaration has the same semantics as an
+                    <code>after</code> advice declaration, you can use any syntax you like.
+                </p>
+                <p>
+                    <code>after finally</code> advice are always executed, they work the same as a finally block.
+                    Meaning that they will be invoked regardless of wheter an exception has been thrown or if the
+                    method has returned successfully.
+                </p>
+                <p>
+                    <b>Java 5 annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+@AfterFinally("execution(@TransactionAttribute * *.*(..))")
+public void logTxMethods(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+/**
+ * @AfterFinally("execution(@TransactionAttribute * *.*(..))")
+ */
+public void logTxMethods(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>XML definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+<advice type="after finally"
+        bind-to="execution(@TransactionAttribute * *.*(..))"
+        name="logTxMethods"/>
+                    ]]></source>
+                </p>
+            </subsection>
+            <subsection name="after returning [TYPE]">
+                <p>
+                    <code>after returning [TYPE]</code> advice is executed if the method returns normally (without
+                    throwing an exception)
+                    <b>and</b> the actual type that is returned is of the type that is specified
+                    in the advice declaration.
+                </p>
+                <p>
+                    If no return type is specified then it applies to all invocations that return normally, e.g. not
+                    when throwing an exception.
+                </p>
+                <p>
+                    <b>Java 5 annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+@AfterReturning(
+    type="@Service *..*",
+    pointcut="execution(@TransactionAttribute * *.*(..)"
+)
+public void txCommitReturningService(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+/**
+ * @AfterReturning(
+ *      type="@Service *..*",
+ *      pointcut="execution(@TransactionAttribute * *.*(..)"
+ * )
+ */
+public void txCommitReturningService(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>XML definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+<advice type="after returning(@Service *..*)"
+        bind-to="execution(@TransactionAttribute * *.*(..))"
+        name="txCommitReturningService"/>
+                    ]]></source>
+                </p>
+            </subsection>
+            <subsection name="after throwing [TYPE]">
+                <p>
+                    <code>after throwing [TYPE]</code> advice is executed after the execution completes
+                    abruptly because of an exception
+                    <b>and</b> the actual type of the exception that is thrown is of the type that is specified
+                    in the advice declaration.
+                </p>
+                <p>
+                    If no exception type is specified then it applies to all invocations that returns with
+                    an exception.
+                </p>
+                <p>
+                    <b>Java 5 annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+@AfterThrowing(
+    type="RuntimeException",
+    pointcut="execution(@TransactionAttribute * *.*(..)"
+)
+public void txRollbackOnRuntimeException(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>JavaDoc annotation definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+/**
+ * @AfterThrowing(
+ *    type="RuntimeException",
+ *    pointcut="execution(@TransactionAttribute * *.*(..)"
+ * )
+ */
+public void txRollbackOnRuntimeException(StaticJoinPoint joinPoint) {..}
+                    ]]></source>
+                </p>
+                <p>
+                    <b>XML definition</b>
+                </p>
+                <p>
+                    <source><![CDATA[
+<advice type="after throwing(RuntimeException)"
+        bind-to="execution(@TransactionAttribute * *.*(..))"
+        name="txRollbackOnRuntimeException"/>
+                    ]]></source>
+                </p>
+            </subsection>
+        </section>
+
+        <section name="StaticJoinPoint, JoinPoint, EnclosingStaticJoinPoint">
+            <p>
+                Advice are methods in aspect class. The method signature must conform to some rules, depending on the pointcut
+                where the advice is bound to, when args(..), this(..) and/or target(..) are used to gain access to join point
+                argument / caller / callee instance.
+            </p>
+            <p>
+                Aside from this pointcut bounded arguments, the advice can have extra arguments of type "JoinPoint" or
+                "StaticJoinPoint", which do not appear in the pointcut. First version of AspectWerkz were supporting only
+                "JoinPoint" as advice argument, and use of "getRtti()" RTTI API was mandatory.
+            </p>
+            <p>
+                In AspectWerkz 2.x, use of "StaticJoinPoint" and/or "JoinPoint" as advice argument is optional and use of
+                it (or no use of it at all) depends on aspect developer decision. Note that for "around" advice, in order to
+                invoke "proceed()" properly, you will need access to either a "StaticJoinPoint" or "JoinPoint" instance).
+            </p>
+            <p>
+                When only "StaticJoinPoint" is used, specific optimizations are used to maximize runtime performance
+                since RTTI access is then guaranteed to not happen.
+                <br/>
+            </p>
+            <p>
+                The following demonstrates legal syntax:
+                <source><![CDATA[
+@Before("execution(* foo.Bar.method(..))")
+void before() {}
+
+@Before("execution(* foo.Bar.method(..))")
+void before(StaticJoinPoint sjp) {}
+
+@Before("execution(* foo.Bar.method(..))")
+void before(JoinPoint jp) {}
+
+@Around("execution(* foo.Bar.method(..))")
+Object around() {
+    // possible but rather useless since then all following advices
+    // in the chain are skipped since proceed() is not called
+    return null;
+}
+
+@Around("execution(* foo.Bar.method(..))")
+Object around(StaticJoinPoint sjp) throws Throwable {
+    return sjp.proceed();
+}
+
+@Around("execution(* foo.Bar.method(..))")
+Object around(JoinPoint jp) throws Throwable {
+    return jp.proceed();
+}
+
+@Around("call(* foo.Bar.method(..)) && args(i, j) && target(bar) && this(caller)")
+Object aroundCallWithBindings(int i, int j, Bar bar, Object caller, StaticJoinPoint sjp) throws Throwable {
+    // no use of RTTI and tedious casting
+    // much better performance
+    bar.method();
+    int localInt = j + i;
+    ...
+    return sjp.proceed();
+}
+
+// use of pointcut composition with argument bindings
+@Expression("execution(* foo.Bar.method(..)) && args(i)")
+void pointcut_1(int i) {}
+
+@Expression("execution(* foo.Bar.method(..)) && target(bar)")
+void pointcut_2(Bar bar) {}
+
+@Around("pointcut_1(myI) && pointcut_2(myBar)")
+Object around(JoinPoint jp, int myI, Bar myBar) throws Throwable {
+    myBar.method();
+    return jp.proceed();
+}
+
+                ]]></source>
+            </p>
+            <p>
+                The use of <code>EnclosingStaticJoinPoint</code> does not interfere on advice signature. EnclosingStaticJoinPoint
+                information is accessible from a StaticJoinPoint or JoinPoint instances.
+            </p>
+        </section>
+
+        <section name="this() and target()">
+            <p>
+                AspectWerkz 2.x introduces this(..) and target(..) pointcut designators. They can be used to narrow
+                a pointcut expression based on caller and calle types (note: they will implicitly filter out
+                callee side static methods, callee constructors on constructor call pointcut (since the callee is not
+                available yet), and caller side static method for call pointcuts and field pointcuts).
+            </p>
+            <p>
+                They can be used with
+                <b>type patterns</b>: this(foo.Bar+), target(foo.*) etc.
+            </p>
+            <p>
+                They can be used to gain direct access to callee and caller instance in advice by using advice argument binding, when
+                combined with pointcut with signature or advice with signature (see previous part).
+                <source><![CDATA[
+// this pointcut is not declared as a field since it exposes parameter binding
+// note use of "bar" variable name
+@Expression("target(bar)")
+void pointcut(Bar bar) {}
+
+// use the pointcut with respect to its signature
+// note use of "myBar" variable name
+@Before("execution(* *..method(..)) && pointcut(myBar)")
+void before(Bar myBar) {
+    myBar.callback();
+}
+                ]]></source>
+            </p>
+        </section>
+
+        <section name="New annotation backend and Java 5 annotations support">
+            <p>
+                In AspectWerkz 2.x, the former "TypedAnnotationProxy" and "UntypedAnnotationProxy" classes are gone.
+                To define a strongly typed custom annotation with Java 1.3/1.4, you need to write an interface.
+                This interface should only have method whose return type is the annotation element type (see restriction below)
+                and with no parameters. This means that Java 1.3/1.4 annotation are identical to Java 5 annotations
+                except that the annotation is an "interface" and not a "@interface" (see samples below).
+            </p>
+            <p>
+                If the annotation is exposing an anonymous element, the special "[type] value();" method should be used
+                (as in Java 5 annotations)
+            </p>
+            <p>
+                Restrictions: In Java 5, Annotations defined with "@interface" have restrictions. Type of exposed elements
+                cannot be multi-dimensional arrays, etc. The same restriction applies for Java 1.3/1.4 AspectWerkz annotations.
+            </p>
+            <p>
+                Note: Java 5 "default" value is not available in Java 1.3/1.4 AspectWerkz annotations, hence the default
+                value of "non Java 5" annotation elements is "null" (or 0 / false for primitives types).
+                <br/>
+                Note: Java 5 does not support having several annotation of the same type on the same member, while this is
+                possible with AspectWerkz 1.3/1.4 Annotations (though not recommanded for upward compatibility)
+                <br/>
+                Note: Java 1.3/1.4 annotation will implement both the given interface and the org...Annotation interface which
+                is equivalent to the java.lang.annotation.Annotation interface (f.e. annotationType() will return the type of the
+                annotation).
+                <br/>
+                Note: for Java 5, the annotation that appears in the source must be part of the imports or fully qualified
+                (@foo.bar.AnnotateMe("some texte")). For AspectWerkz equivalent with 1.3/1.4, use the custom annotation.properties
+                file at compilation time to set annotation nickname (f.e. @Hello("some text") could be of type foo.bar.AnnotateMe this way..)
+            </p>
+            <p>
+                Samples: Java 5 Annotations and their Java 1.4 equivalent with AspectWerkz 2.x
+                <source><![CDATA[
+// your Java 5 code
+-------------------
+// ... specific annotation @Target and @Retention to control retention and bindings
+public @interface AnnotateMe {
+    String value() default null;
+}
+
+// your source code for an annotated method (same for field, class etc)
+@AnnotateMe
+public void someMethod() {}
+
+@AnnotateMe("my text")
+public void someOtherMethod() {}
+
+// your Java 1.3/1.4 code
+//-----------------------
+
+// use of AspectWerkz Annotations.getAnnotation(...) allow runtime visibily
+// binding is not limited by the annotation
+public interface AnnotateMe {
+    String value();
+}
+
+// your source code for an annotated method (same for field, class etc)
+/**
+ * @AnnotateMe
+ */
+public void someMethod() {}
+
+/**
+ * @AnnotateMe("my text")
+ */
+public void someOtherMethod() {}
+
+// Note for such an annotation that has a single element "value()", the following doclet style syntax is allowed:
+// and the annotation value() will return "my text" as for @AnnotateMe("my text")
+/**
+ * @AnnotateMe my text  
+ */
+public void someOtherMethod() {}
+                ]]></source>
+            </p>
+            <p>
+                Samples with more complex annotation
+                <source><![CDATA[
+// your Java 5 code
+-------------------
+
+@interface Complex {
+    Class someClass();
+    int[] numbers()
+}
+
+@Complex(someClass=String.class, numbers={1, 2})
+public void someMetod() {}
+
+// your Java 1.3/1.4 code
+-------------------------
+
+// just remove the "@" sign
+interface Complex {
+    Class someClass();
+    int[] numbers()
+}
+
+// just write it as a doclet and use fully qualified name when an element is a class type
+/** @Complex(someClass=java.lang.String.class, numbers={1, 2}) */
+public void someMetod() {}
+                ]]></source>
+            </p>
+        </section>
+
+        <section name="New Mixin implementation">
+            <p>
+                We have replaced the old mixin implementation with a completely new and better one.
+                The new implementation mainly gives you two things you did not have before:
+                <ul>
+                    <li>
+                        Serialization of the Mixins -
+                        <br/>
+                        The default behaviour is that the mixins will be serialized along with the target class.
+                        But you have the option of making the mixins
+                        <code>transient</code> (e.g. not serialized with
+                        when the target class is serialized), by setting the
+                        <code>transient=true</code> flag.
+                    </li>
+                    <br/>
+                    <li>
+                        Providing your own factory to control the instantiation of the mixin. This means that you
+                        can plug in any IoC (dependency injection) framework to handle this for you. The custom
+                        factories needs only to implement the
+                        <code>org.codehaus.aspectwerkz.aspect.MixinFactory</code>
+                        interface.
+                    </li>
+                </ul>
+            </p>
+            <p>
+                The mixins can be any regular class, which means that it can be a standalone class, an inner class
+                of a regular class or an inner class in your aspect class.
+            </p>
+            <p>
+                Three different
+                <code>deployment models</code> are supported,
+                <code>perJVM</code>,
+                <code>perClass</code> and
+                <code>perInstance</code>.
+                <ul>
+                    <li>
+                        <code>perJVM</code> - means that there will be only one mixin instance - like a singleton.
+                    </li>
+                    <li>
+                        <code>perClass</code> - means that there will be one mixin instance per
+                        target class.
+                    </li>
+                    <li>
+                        <code>perInstance</code> - means that there will be one mixin instance 
+                        per target instance.
+                    </li>
+                </ul>
+                Note: the
+                <code>perThread</code> deployment model has been left to die in peace. The
+                <code>perJVM</code>
+                deployment model is currently not supported but might come back.
+            </p>
+            <p>
+                If you are using the default factory implementation you have to either provide an no argument constructor
+                or a constructor that takes the:
+                <ul>
+                    <li>
+                        target class as its only parameter - to be used with the
+                        <code>perClass</code> deployment model.
+                    </li>
+                    <li>
+                        target instance as its only parameter - to be used with the
+                        <code>perInstance</code> deployment model.
+                    </li>
+                </ul>
+                The no argument constructor is mandatory for <code>perJVM</code> deployment model.
+            </p>
+
+            <subsection name="Annotation definition">
+                <p>
+                    To define the mixin using annotations you have to use the
+                    <code>org.codehaus.aspectwerkz.annotation.Mixin</code> annotation.
+                    If using Java 5 this is an annotation interface (e.g.
+                    <code>@interface</code>) else
+                    (for JavaDoc annotations) it is a regular interface.
+                </p>
+                <p>
+                    This annotation has three different parameters:
+                    <ul>
+                        <li>
+                            <code>expression</code> (can be used as the default anonymous value) - the pointcut expression
+                            that is used to pick out the set of classes to apply this mixin to.
+                        </li>
+                        <li>
+                            <code>deploymentModel</code> (optional) - has to me one of
+                            <code>perJVM</code>,
+                            <code>perClass</code> or
+                            <code>perInstance</code>. If not specified then
+                            <code>perInstance</code> is used.
+                        </li>
+                        <li>
+                            <code>isTransient</code> (optional) - defines the mixin as transient or not. If not
+                            specified then the default is
+                            <code>false</code>, e.g. serializable.
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    <b>Definition using Java 5 annotations</b>
+                    <source><![CDATA[
+@Mixin("within(*..domain.*)")
+public class MyMixin { ... }
+
+@Mixin(
+    pointcut="within(*..domain.*)",
+    deploymentModel="perClass",
+    isTransient=true
+)
+public class MyOtherMixin { ... }
+                    ]]></source>
+                </p>
+                <p>
+                    <b>Definition using JavaDoc annotations</b>
+                    <source><![CDATA[
+/** @Mixin("within(*..domain.*)") */
+public class MyMixin { ... }
+
+/**
+ * @Mixin(
+ *   pointcut="within(*..domain.*)",
+ *   deploymentModel="perClass",
+ *   isTransient=true
+ * )
+ */
+public class MyOtherMixin { ... }
+                    ]]></source>
+                </p>
+            </subsection>
+
+            <subsection name="XML definition">
+                <p>
+                    The XML definition (in the
+                    <code>META-INF/aop.xml</code> file) can be used for
+                    three different purposes:
+                    <ul>
+                        <li>
+                            Only to define which mixins should be used. Similar to how you declare which aspects
+                            should be used.) This can be the option if the mixin is defined in annotations.
+                            Then you only need to use the
+                            <code>class</code> attribute, e.g.
+                            <code>&lt;mixin class="foo.bar.MyMixinImpl"/&gt;</code>. See below for details.
+                        </li>
+                        <li>
+                            To completely define the mixin. See below for all the attributes that can be used.
+                        </li>
+                        <li>
+                            To override and/or resolve ad definition made using annotations.
+                            See below for all the attributes that can be used.
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                    To define the mixin using the XML definition, use the
+                    <code>mixin</code> element. It has
+                    five different attributes that can be used:
+                    <ul>
+                        <li>
+                            <code>class</code> (mandatory) - defines which class to use as the implementation class.
+                            Has to be the fully qualified name of the class.
+                        </li>
+                        <li>
+                            <code>deployment-model</code> (optional) - defines the deployment model. Can be one of
+                            <code>perJVM</code>,
+                            <code>perClass</code> or
+                            <code>perInstance</code>.
+                        </li>
+                        <li>
+                            <code>transient</code> (optional) - defines the mixin as
+                            <code>transient</code> or not.
+                        </li>
+                        <li>
+                            <code>factory</code> (optional) - defines the custom mixin factory implementation to use
+                            with the specific mixin.
+                        </li>
+                        <li>
+                            <code>bind-to</code> (optional) - defines to which class set the mixin should be applied to.
+                        </li>
+                    </ul>
+                </p>
+                <p>
+                   Example:
+                    <source><![CDATA[
+<mixin class="foo.bar.MyMixinImpl"/>
+
+<mixin class="foo.bar.MyOtherMixinImpl"
+       deployment-model="perClass"
+       transient="true"
+       factory="factories.MyMixinFactory"
+       bind-to="within(*..domain.*)"/>
+                    ]]></source>
+                </p>
+            </subsection>
+
+            <subsection name="Custom Mixin factory">
+                <p>
+                    If you need to be in control of how the aspects are instantiated and/or need to pass in
+                    additional dependencies or configuration using an IoC (dependency injection) framework or similar.
+                    Then you can create custom mixin factory.
+                </p>
+                <p>
+                    The custom factories needs to implement the
+                    <code>org.codehaus.aspectwerkz.aspect.MixinFactory</code>:
+                    <source><![CDATA[
+public interface MixinFactory {
+
+    /**
+     * Creates a new perClass mixin instance, if it already exists then return it.
+     *
+     * @param the target class
+     * @return the mixin instance
+     */
+    Object mixinOf(Class klass);
+
+    /**
+     * Creates a new perInstance mixin instance, if it already exists then return it.
+     *
+     * @param the target instance
+     * @return the mixin instance
+     */
+    Object mixinOf(Object instance);
+}
+                    ]]></source>
+                </p>
+                <p>
+                    The custom mixin factory can only be defined in the
+                    <code>mixin</code> element in the
+                    <code>META-INF/aop.xml</code> file.
+                </p>
+
+            </subsection>
+
+            <subsection name="Retrieval of Mixin instances">
+                <p>
+                    You can get a hold of the mixin instances for a specific instance or class through the
+                    <code>org.codehaus.aspectwerkz.aspect.management.Mixins</code> class.
+                </p>
+                <p>
+                Example:
+                    <source><![CDATA[
+// get per class deplolyed mixin
+Object perclassMixin = Mixins.mixinOf(MyMixin.class, Target.class);
+
+// get per instance deplolyed mixin
+Object perinstanceMixin = Mixins.mixinOf(MyMixin.class, targetInstance);
+                    ]]></source>
+                </p>
+            </subsection>
+        </section>
+
+        <section name="Retrieval of Aspect instances">
+            <p>
+                You can get a hold of specific aspect instances using the
+                <code>org.codehaus.aspectwerkz.aspect.management.Aspects</code> class.
+            </p>
+            <p>
+            Example:
+                <source><![CDATA[
+// get per jvm deployed aspect
+Object singletonAspect = Aspects.aspectOf(MyAspect.class);
+                   ... = Aspects.aspectOf("uniqueNameOfAspect");
+
+// get per class deployed aspect
+Object perclassAspect = Aspects.aspectOf(MyAspect.class, Target.class);
+                  ... = Aspects.aspectOf("uniqueNameOfAspect", Target.class);
+
+// get per instance deployed aspect
+Object perinstanceAspect = Aspects.aspectOf(MyAspect.class, targetInstance);
+                     ... = Aspects.aspectOf("uniqueNameOfAspect", targetInstance);
+                ]]></source>
+            </p>
+        </section>
+
+        <section name="Strongly typed proceed">
+            <p>
+                When using around, it can be usefull to modify advised target argument before proceeding
+                to the next advice or target invocation.
+                It is now possible to do it using a strongly typed user defined sub-interface of <code>JoinPoint</code>
+                or <code>StaticJoinPoint</code>.
+            </p>
+            <p>
+                When using this feature, all you have to write is a <code>public interface</code> with a single method
+                whose signature is <code>Object proceed(&lt; any parameters you need &gt;)</code>.
+                Then when writing an around advice, you simply declare this interface to be the first parameter of your
+                advice method, instead of using the regular <code>JoinPoint</code>
+                or <code>StaticJoinPoint</code> interface as described <a href="implementation.html#Advice">here</a>.
+            </p>
+            <p>
+                Example:
+                <source><![CDATA[
+public class MyAspect {
+
+   // we could inherit StaticJoinPoint instead
+   public static interface MyCustomJoinPoint extends JoinPoint {
+       Object proceed(String arg0, int[] arg1);
+   }
+
+   // see here the use of MyCustomJoinPoint as first argument, and the
+   // advice signature be in the order of the MyCustomJoinPoint.proceed(..) method
+   @Around("somePointcut(arg0, arg1)")
+   // we could write @Around("execution(* Foo.m(..)) && args(arg0, arg1)") as well
+   public Object around(MyCustomJoinPoint jp, String arg0, int[] arg1) throws Throwable {
+      ...
+      // lets change the args :
+      return jp.proceed("new arg0", new int[]{1,2,3});
+   }
+}
+                ]]></source>
+            </p>
+        </section>
+
+        <section name="staticinitialization() pointcut">
+            <p>
+                Since 2.0.RC3, <code>staticinitialization(&lt;type pattern&gt;)</code> pointcut is supported. It can also be used
+                in conjunction with withincode in the form of <code>withincode(staticinitialization(&lt;type pattern&gt;))</code>
+            </p>
+        </section>
+ 
+        <section name="Per instance interception">
+            <p>
+                Aspects can be deployed as <code>perInstance</code> as described <a href="definition_issues.html#Deployment_models">here</a>.
+                In such a case, <b>every single instance</b> will be advised, even though each one will have a distinct aspect instance.
+            </p>
+            <p>
+                Per instance interception allow to programmatically add a new <i>interceptor</i> to a <b>given instance only</b>.
+                We name it <i>interceptor</i> since to allow this dynamicity, the semantics are limited and the interceptor
+                must conform to a given interface, hence the regular semantics of advice (like parameter binging with <code>args()</code>)
+                cannot apply.
+            </p>
+            <p>
+                For this to work, the <code>META-INF/aop.xml</code> definition has to declare which classes should be
+                opened for per instance interception. Fine grained control is provided to only open to a specific
+                set of join points f.e. only <code>execution</code>, only <code>call</code>, <code>get</code>, <code>set</code>
+                or any composition of those <code>get|set|execution</code> or <code>all</code>.
+            </p>
+            <p>
+                Note that the <code>&lt;advisable... &gt;</code> directive controls the <i>caller</i> side. Only the caller side is
+                made advisable, and will expose the API to add and remove advices.
+                For finer control on the callee side, you should consider using perTarget deployment model for regular aspects.
+            </p>
+            <p>
+                Then at runtime, you simply cast the instance to <code>org.codehaus.aspectwerkz.intercept.Advisable</code> and use the API provided thru it.
+                The interceptors must implements one of the interface among:
+                <ul>
+                    <li><code>org.codehaus.aspectwerkz.intercept.BeforeAdvice</code></li>
+                    <li><code>org.codehaus.aspectwerkz.intercept.AroundAdvice</code></li>
+                    <li><code>org.codehaus.aspectwerkz.intercept.AfterReturningAdvice</code></li>
+                    <li><code>org.codehaus.aspectwerkz.intercept.AfterThrowingAdvice</code></li>
+                    <li><code>org.codehaus.aspectwerkz.intercept.AfterAdvice</code></li>
+                </ul>
+            </p>
+            <p>
+                The API allows to programmatically bind an interceptor to a <b>new pointcut</b>, which will be implicitly narrowed
+                to the advisable instance. It is possible to use <i>anonymous inner interceptors</i>:
+                Example for the definition:
+                <source><![CDATA[
+<aspectwerkz>
+    <system id="tests">
+        <advisable pointcut-type="execution" expression="within(test.intercept.execution.InterceptTest)"/>
+        <advisable pointcut-type="call" expression="within(test.intercept.call.Caller) && target(test.intercept.call.Callee)"/>
+        <advisable pointcut-type="set" expression="within(test.intercept.set.InterceptTest)"/>
+        <advisable pointcut-type="get" expression="within(test.intercept.get.InterceptTest)"/>
+        <advisable pointcut-type="call|execution|set|get" expression="within(test.aspect.MemberMethodTestAspect)"/>
+        <advisable pointcut-type="all" expression="within(test.aspect.AllMemberMethodTestAspect)"/>
+        ...
+        ... regular aspect / mixin definition
+    </system>
+</aspectwerkz>
+                ]]></source>
+                It is also possible to narrow the expression using all regular pointcut designators (except cflow).
+                <br/>
+                Example for the runtime API:
+                <source><![CDATA[
+
+// Caller has been defined as Advisable in the aop.xml
+public class Caller {
+
+  public void demo() {
+
+    Callee callee = new Callee();
+    // Callee was declared as a possible target for "call" pointcuts in Caller
+    // hence any call of Callee by a Caller instance is able to handle interceptor addition / removal
+
+    // this call will occur with regular aspects bounded - if any
+    callee.adviseWithAround();
+    callee.adviseWithAround(1);
+
+    // lets add an around interceptor to the "this" Caller instance
+    // and for the the call to Callee as expressed in the given pointcut
+    // Note that the change will depend on the advisable definition
+    // Here it was <advisable pointcut-type="call|execution" ...> and thus
+    // any aw_addAdvice(..) on f.e. get / set pointcut will be useless
+    ((Advisable) this).aw_addAdvice(
+        "call(* test.intercept.call.Callee.adviseWithAround(..))",
+        // we use an anonymous inner class here
+        new AroundAdvice() {
+            // notice the generic invoke() method defined in the
+            // org.codehaus.aspectwerkz.intercept.AroundAdvice interface
+            public Object invoke(JoinPoint jp) throws Throwable {
+                InterceptTest.log("around1_pre_call ");
+                Object result = jp.proceed();
+                InterceptTest.log("around1_post_call ");
+                return result;
+            }
+        }
+    );
+
+    // this call will occur with regular aspects bounded - if any
+    // and with the new around advice (with lower precedence)
+    callee.adviseWithAround();
+    callee.adviseWithAround(1);
+
+    // this call on another instance of Caller will not be affected by the new around advice
+    Caller caller = new Caller();
+    caller.callAdviseWithAroundOnTheGivenCalleeInstance(callee);
+
+    // we can now remove the advice
+    // it will remove the first advice found of the given class type
+    // thus cannot really be used when an anonymous class has been used,
+    // but using the interface enables us to remove ALL around advice.
+    // Again we narrow the pointcut
+    ((Advisable) this).aw_removeAdvice("call(* test.intercept.call.Callee.adviseWithAround(int))", AroundAdvice.class);
+
+    // will still have the interceptor since it is another instance of Caller
+    caller.callAdviseWithAroundOnTheGivenCalleeInstance(callee);
+
+    // will not have the interceptor any more : adviseWithAround(int) signature
+    callee.adviseWithAround(2);
+                ]]></source>
+            </p>
+            <p>
+                Note: constructors are not made advisable ie open for this programmatic interception for now (2.0)
+            </p>
+        </section>
+
+        <section name="AWProxy: proxy awareness of aspects">
+            <p>
+                Sometimes it is not possible to use the weaver be it with offline mode (post compilation)
+                or online mode (load time weaving).
+                In such a case, you may still want to make use of a subset (at least) of AOP concepts.
+                <code>AspectWerkz</code> provides its own proxy implementation to make use of the aspects (unchanged)
+                with proxies. The implementation relies on subclassing hence it is not needed to use interface based proxies.
+            </p>
+            <p>
+                For a tutorial on AWProxy, you can read this <a href="http://blogs.codehaus.org/people/jboner/archives/000914_awproxy_proxy_on_steriods.html">blog article</a> that explains some more details
+                about the API.
+            </p>
+            <p>
+                The distribution includes out of the box support for <code>org.codehaus.aspectwerkz.proxy.Proxy</code>.
+                Just include the aspectwerkz.jar, aspectwerkz-core.jar and aspectwerkz-jdkXXX.jar in your classpath,
+                have your aspects declared in (one or more) META-INF/aop.xml available in the classpath
+                (defined thru annotations or XML - <a href="implementation.html#Choosing_a_definition_model">the usual documentation</a> applies), and start up the application
+                as usual (no JVM option for weaving - though it is compatible as well).
+            </p>
+            <p>
+                Then to obtain a proxy of a class that is aware of the aspects available in the application classpath
+                (following the regular deployment hierarchy rules according to classloader delegation described
+                <a href="deployment.html">here</a>) invoke the <code>org.codehaus.aspectwerkz.proxy.Proxy</code> API.
+                You will get a proxy of the given class that will be aware of the aspects.
+            </p>
+            <p>
+                Note that only execution pointcuts will be applied (for both methods and constructors), though field get / set
+                , call and handler pointcuts may have been defined within your aspects. This is the tradeoff of using proxy.
+            </p>
+            <p>
+                The advantages of using this approach is that you stick to <b>one sole model</b> to write your aspects
+                and immediately obtain proxy aware of them without any changes.
+                All pointcuts semantics like <code>args(), this(), targe()</code> apply, as well as composition with
+                <code>within()</code>, and <code>cflow()</code>.
+            </p>
+            <p>
+                The performance is as good as for regular weaved class, and actually better than CGLIB proxies.
+                You can read more about that in our <a href="http://docs.codehaus.org/display/AW/AOP+Benchmark">AWBench project</a> (see AW Proxy).
+            </p>
+            <p>
+                Example (assuming you have some aspects in the classpath):
+                <source><![CDATA[
+public class TraceMe {
+
+    public TraceMe(String name) {
+    }
+
+    public void step1() {
+        step2();
+    }
+
+    // this method is final hence won't be exposed in the proxy
+    public final void step2() {
+    }
+
+    public static void main(String[] args) {
+        // obtain a proxy that would be aware of the aspect(s) on "TraceMe"
+        // TraceMe traceMe = new TraceMe("foo") is replaced by (regular reflective syntax)
+        TraceMe traceMe = (TraceMe) Proxy.newInstance(
+                TraceMe.class, new Class[]{String.class}, new String[]{"foo"}
+        );
+        traceMe.step1();
+    }
+                ]]></source>
+            </p>
+            <p>
+                Note that it is perfectly possible to use the per instance interception feature with proxies.
+                Read more about it <a name="Per instance interception">here</a>.
+            </p>
+            <p>
+                AWProxy also provides a modified version of CGLIB so that CGLIB proxy are made aware
+                of the AspectWerkz aspects.
+                This version is not part of the distribution and you have to checkout it from the CVS, build it
+                and include it first in your classpath so that your regular CGLIB becomes aware of it. This may not work
+                if your CGLIB version has been repackaged - hence refer to the source code to rename the package as well.
+            </p>
+            <p>
+                CGLIB patch for AspectWerkz integration is available <a href="http://cvs.aspectwerkz.codehaus.org/viewrep/aspectwerkz/aspectwerkz4/src/cglib-ext/src/main/net/sf/cglib/core">here</a>
+                To build a jar from this patch, checkout the CVS and run the following:
+                <source><![CDATA[
+// in root folder of the distribution
+
+// adapt for unix / mac
+set ASPECTWERKZ_HOME=.
+
+// build AW
+ant clean dist
+
+// build the CGLIB extension
+cd src
+cd cglib-ext
+ant clean dist
+
+// the jar is in src/cglib-ext/target/
+                ]]></source>
+            </p>
+        </section>
+
+    </body>
+</document>
+

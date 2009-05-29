@@ -1,0 +1,12 @@
+<!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="aopalliance">
+       <aspect class="test.aopalliance.aspect.TestInterceptor">
+            <advice name="invoke"
+                type="around"
+                bind-to="execution(long test.aopalliance.Test.execution()) || call(long test.aopalliance.Test.call())"/>
+        </aspect>
+    </system>
+</aspectwerkz>

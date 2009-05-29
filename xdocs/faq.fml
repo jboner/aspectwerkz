@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<faqs title="Frequently Asked Questions">
+
+    <part id="migration">
+        <title>AspectWerkz 2.x</title>
+        <faq id="migration/2.x">
+            <question>
+                What are the gotchas when migrating from 1.x to 2.x?
+            </question>
+            <answer>
+                <p>
+                    <ul>
+                        <li>
+                            Build and develop for Java 5 -
+                            <br/>
+                            To build on Java 5 you will have to put the
+                            <code>./lib/aspectwerkz-jdk5-2.0.jar</code>
+                            on the classpath <b>instead of</b> <code>./lib/aspectwerkz-jdk14-2.0.jar</code>. Same if you want to run it inside an IDE, or use an Ant script.
+                            This jar contains the Java 5 implementations of the AspectWerkz annotations.
+                        </li>
+                        <br/>
+                        <li>
+                            No more
+                            <code>perThread</code> deployment model -
+                            <br/>
+                            We have removed the
+                            <code>perThread</code> deployment model for both aspects and mixins.
+                            It should have never been added in the first place. We are working on supporting the
+                            much more fine-grained and expressive
+                            <code>percflow</code> and
+                            <code>percflowbelow</code>.
+                        </li>
+                        <br/>
+                        <li>
+                            Currently no
+                            <code>perJVM</code> deployment model for mixins -
+                            <br/>
+                            This will most likely be added for the 2.0 final release.
+                        </li>
+                        <br/>
+                        <li>
+                            No more annotation proxies -
+                            <br/>
+                            This implementation has been replaced by a better one, in which you only have to write
+                            an interface that is very similar to a Java 5 annotation component.
+                            For details see
+                            <a href="#New annotation backend and Java 5 annotations support">this section</a>.
+                        </li>
+                        <br/>
+                        <li>
+                            New Mixin implementation -
+                            <br/>
+                            The Mixin implementation is completely new, both the way it is implemented and defined.
+                            For details see
+                            <a href="#New Mixin implementation">this section</a>.
+                        </li>
+                        <br/>
+                        <li>
+                            For mixin definition,
+                            <code>@Introduce</code> and
+                            <code>&lt;introduce ...&gt;</code> -
+                            <br/>
+                            has been replaced by
+                            <code>@Mixin</code> and
+                            <code>&lt;mixin ...&gt;</code> (child of &lt;system&gt; XML element)
+                        </li>
+                        <br/>
+                        <li>
+                            For interface only introduction,
+                            <code>@Implements</code> and
+                            <code>&lt;introduce ...&gt;</code> -
+                            <br/>
+                            Has been replaced by
+                            <code>@Introduce</code> and
+                            <code>&lt;introduce ...&gt;</code> (child of &lt;aspect&gt; XML element)
+                        </li>
+                        <br/>
+                        <li>
+                            Dynamic AOP requires AspectWerkz native library in
+                            <code>PATH</code> - unless using Java 5.
+                            <br/>
+                            To make use of the dynamic features, such as runtime deployment and undeployment, you
+                            need to have the AspectWerkz native library (*.dll, *.so or *.jnilib) in your
+                            <code>PATH</code>.
+                            These can be found
+                            <a href="http://aspectwerkz.codehaus.org/downloads/">here</a>.
+                            <br/>
+                            A consequence is that the dynamic tests will fail if you have not done this.
+                            The native library is not needed with Java 5.
+                        </li>
+                        <br/>
+                    </ul>
+                </p>
+            </answer>
+        </faq>
+        <faq id="migration/jit2.x">
+            <question>
+                What is this jit join point I heard about in the docs, in articles, or with this <code>-genjp</code> option?
+            </question>
+            <answer>
+                AspectWerkz 2.x architecture enables statically compilation of the advices. This does not means you have to
+                do all the weaving in compilation phase at all. This means that in your classes that AspectWerkz instruments, the
+                advices are invoked statically (not reflectively). This ensure maximum speed.
+                <br/>
+                To enable that, the architecture relies on the concept of jit join point. This is an AspectWekrz generated
+                structure (very little class) that is statically invoked from the weaved classes and that in turn statically
+                invokes the advices. This jit join point is usually generated on the fly (ie when the weaved class gets loaded in the
+                JVM) and can be replaced on the fly (this is how the dynamic deployment works internally).
+                <br/>
+                In some cases it is interesting to compile this jit join point ahead of time (for debugging purpose or for
+                restricted environment that do not allow jit definition of classes due to java security restrictions etc).
+                In such case, you can use the <code>-genjp</code> option of the offline mode to generated those jit join point
+                classes as part of the weaving process and output, and thus package them with your application.
+            </answer>
+         </faq>
+        <faq id="migration/selfservice">
+            <question>
+                What are the common steps to perform when I have some troubles?
+            </question>
+            <answer>
+                The following options and process are common answers to problems:
+                <ul>
+                    <li>use -Daspectwerkz.transform.verbose=true (or -verbose with offline mode command line tool and Ant task)
+                    to turn on the verbose mode that will tell more when classes gets presented to the weaver.
+                    </li>
+                    <li>use -Daspectwerkz.transform.details=true (or -details with offline mode command line tool and Ant task)
+                    to turn on pointcut matching verbose mode that will tell more when pointcuts match. This is usefull to understand
+                    why "nothing happen !" or why "the application is very low to start up!" (due to a pointcut matching almost every single instruction f.e.).
+                    The output will print message about "earlymatch" and "match". An early match
+                    means that there might be a match but that further analysis of the class beeing weaved is needed.
+                    A match thus means a pointcut match (thus an actual join point).
+                    When a mixin is used, you only see early matches.
+                    </li>
+                    <li>use -Daspectwerkz.transform.dump=* (or -Daspectwerkz.transform.dump=*,before) to dump to disk the weaved classes.
+                    The second form dumps classes before and after weaving. The dump folder cannot be changed and is "./_dump" relative to application
+                    startup folder.
+                    You can replace "*" with some package prefix like "com.bar.*" to narrow the dump.
+                    </li>
+                    <li>use offline mode to see how it goes before using online weaving (that can be sometime more complex to set up)</li>
+                    <li>make sure you practice successfully the HelloWorld tutorial in the tutorial section</li>
+                    <li>ask for help on the mailling lists (you have to subscribe by sending an email before posting)</li>
+                </ul>     
+            </answer>
+        </faq>
+    </part>
+
+    <part id="general">
+        <title>General</title>
+
+        <faq id="general/what is aw">
+            <question>
+                What is AspectWerkz?
+            </question>
+            <answer>
+                <p>
+                    <code>AspectWerkz</code> is a dynamic, lightweight and
+                    high-performant AOP/AOSD framework for Java.
+                </p>
+            </answer>
+        </faq>
+        <faq id="general/app server command line tool">
+            <question>
+                How can I use it without starting up the application or application server with the command line tool?
+            </question>
+            <answer>
+                <p>
+                    You can post-process (instrument/transform) your source files before use. See the
+                    <a href="weaving.html#Offline_weaving">Offline Weaving</a>
+                    section.
+                </p>
+                <p>
+                    You can also use one of the several options to start your application with AspectWerkz enabled without
+                    the command line tool.
+                    <br/>
+                    For a complete discussion on this topic, see the
+                    <a href="weaving.html">Weaving</a> section.
+                </p>
+                <p>
+                    With 2.x you can also use the AWProxy API. See the <a href="new_features_in_2_0.html#AWProxy:_proxy_awareness_of_aspects">AWProxy section</a>.
+                </p>
+            </answer>
+        </faq>
+        <faq id="general/what does command line tool">
+            <question>
+                What does the aspectwerkz command line tool do?
+            </question>
+            <answer>
+                <p>
+                    Basically it just invokes the normal java command line tool
+                    by calling a class that intercepts the normal class loading
+                    scheme before it invokes the main class specified. This means
+                    that you can just substitute the normal call to:
+                    <br/>
+                    <code>java -cp .. -D.. mainclass args</code> with:
+                    <code>aspectwerkz -cp .. -D.. mainclass args</code>
+                    and everything should work as before, the only difference
+                    is that all classes that are loaded will be transformed
+                    (if they are defined to). You can even hack the startup
+                    script of your favorite application server and start it up
+                    using the
+                    <code>aspectwerkz</code> command line tool as
+                    outlined above, or using directly aspectwerkz-core-
+                    <i>version</i>.jar facilities.
+                </p>
+                <p>
+                    The key advantage of the command line tool when you startup your application
+                    thru it is that it provides an autodetection mechanism for java 1.3 / java 1.4 support.
+                    The online architecture differs between these two java version.
+                    <br/>
+                    For full control on the behavior of AspectWerkz online mode (dump class, verbosity), you should
+                    avoid using the command line tool.
+                    <br/>
+                    Read more in the
+                    <a href="weaving.html">Weaving</a> section.
+                </p>
+            </answer>
+        </faq>
+        <faq id="general/change at runtime">
+            <question>
+                If I use the post-processor, I'll lose the possibility to change my configurations at runtime, right?
+            </question>
+            <answer>
+                <p>
+                    Actually no. You will still be able to to all the things covered in the
+                    <a href="new_features_in_2_0.html#Hot_deployment_and_undeployment_of_aspects">Hot deployment section</a>
+                    of the documentation.
+                </p>
+            </answer>
+        </faq>
+        <faq id="general/dtd">
+            <question>
+                Is there any DTD or XML Schema I can use to write the AspectWerkz XML definition fil?
+            </question>
+            <answer>
+                <p>
+                    The DTD is provided since 0.8. Each distribution comes with a bundled DTD so that it is not looked
+                    for on the web at runtime.
+                    <br/>
+                    When you write your XML definition file, add the following at the top of your XML.
+                    <!-- faq.fml does not handle correctly &lt; chars in CDATA with maven (1b10) -->
+                    <source>
+                        &lt;!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD 1.0//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz_1_0.dtd"&gt;
+                    </source>
+                    The DTD for the latest release for 2.x is also always referenced with
+                    <source>
+                        &lt;!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd"&gt;
+                    </source>
+                    The DTD for the latest release for 1.x is also always referenced with
+                    <source>
+                        &lt;!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz.dtd"&gt;
+                    </source>
+                </p>
+            </answer>
+        </faq>
+        <faq id="general/build">
+            <question>
+                Why can't I build AspectWerkz in a directory whose name contains whitespaces?
+            </question>
+            <answer>
+                <p>
+                    The Ant or Maven based build will fail if the
+                    <code>ASPECTWERKZ_HOME</code> (basedir) is a directory
+                    whose name contains whitespace(s). This would drastically complexify the script if we had to
+                    escape the whitespaces and thus this is not supported for convenience reason.
+                </p>
+                <p>
+                    The AspectWerkz online and offline mode (command line tool etc) support path whose
+                    elements contains whitespace(s) in their names.
+                </p>
+            </answer>
+        </faq>
+    </part>
+    <part id="bea">
+        <title>BEA integration</title>
+        <faq id="bea/jrockit">
+            <question>
+                Does AspectWerkz support BEA JRockit?
+            </question>
+            <answer>
+                AspectWerkz supports BEA JRockit thru a dedicated module wich relies on a low level BEA API.
+                It makes AOP integration on BEA JRockit much easier than for HotSpot.
+                <a href="weaving.html#BEA_JRockit">Read more</a>.
+            </answer>
+        </faq>
+        <faq id="bea/wls81">
+            <question>
+                I am having troubles with WebLogic Server / Integration when using AspectWerkz, with a "getEncoding" error !
+            </question>
+            <answer>
+                This is a known conflict between
+                <i>piccolo.jar</i> that ships with AspectWerkz and the WebLogic 8.1 product line.
+                Rename the
+                <i>lib/piccolo.jar</i> in
+                <i>lib/piccolo.jar.IGNORE</i> in the AspectWerkz distribution.
+                Note: this is fixed as of 2.0 final since the distribution only contains a piccolo.jar.java13 that you have
+                to rename for use with java 1.3
+            </answer>
+        </faq>
+    </part>
+
+    <part id="other">
+        <title>Other</title>
+        <faq id="other/ibm">
+            <question>
+                Does AspectWerkz supports custom JRE like IBM ones?
+            </question>
+            <answer>
+                AspectWerkz supports all java environments thru offline mode. With online mode, AspectWerkz hooks at the class loader level.
+                AspectWerkz provides a transparent mechanism that support the IBM JRE which bundles a specific
+                <code>java.lang.ClassLoader</code>.
+            </answer>
+        </faq>
+        <faq id="other/bea">
+            <question>
+                Does AspectWerkz support BEA JRockit?
+            </question>
+            <answer>
+                AspectWerkz supports BEA JRockit thru a dedicated module wich relies on low level BEA API.
+            </answer>
+        </faq>
+        <faq id="other/java 1.3">
+            <question>
+                    Does AspectWerkz support Java 1.3?
+            </question>
+            <answer>
+                    Yes it does.
+                <br/>
+                    First from the distribution <code>/lib</code>, rename <code>piccolo-xxx.jar.java13</code> to
+                    <code>piccolo-xxx.jar</code> (keep the -xxx version number) and add the
+                <code>piccolo-1.03.jar</code> file in your
+                <code>JAVA_HOME/jre/lib/ext/</code>.
+                <br/>
+                    You will need to add xerces.jar as well at this location.
+                <br/>
+                    Second, start your VM with the extra option
+                <code>-Djavax.xml.parsers.SAXParserFactory=com.bluecast.xml.JAXPSAXParserFactory</code>.
+                <br/>
+                    If you encounter troubles in your environment (IDE etc), just remove the
+                <code>piccolo-1.03.jar</code> file from your
+                <code>JAVA_HOME/jre/lib/ext/</code> when done.
+            </answer>
+        </faq>
+        <faq id="other/jdk">
+            <question>
+                Can I weave classes from my JDK?
+            </question>
+            <answer>
+                Yes you can.
+                We don't support such a usage since you should not modify your JDK classes. A how-to has been posted
+                in February 2005 on the user mailling list. You can search in the mailing list archives.
+            </answer>
+        </faq>
+        <faq id="other/nodeps">
+            <question>
+                What are the jar needed at runtime? Is there a nodeps jar?
+            </question>
+            <answer>
+                The jar needed at runtime are aspectwerkz-V.jar, aspectwerkz-jdkX-V.jar,
+                dom4j-V.jar, jrexx-V.jar, trove-V.jar and backport175-V.jar.
+                When using Offline compilation, annotation compilation and Ant task for those, you further
+                need ant-V.jar.
+                When using Java 1.3, you further need piccolo-V.jar (see other entry in this FAQ) or any other XML
+                parser implementation.
+                <br/>
+                There is also an aspectwerkz-nodeps-jdkX-V.jar that contains all you need for the runtime.
+                <br/>
+                Make sure you are using the correct version for your JDK (use the jdk14 for Java 1.3 as well).
+            </answer>
+        </faq>
+    </part>
+</faqs>

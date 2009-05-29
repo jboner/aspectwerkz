@@ -1,0 +1,154 @@
+<?xml version="1.0"?>
+
+<document>
+    <properties>
+        <title>Releases</title>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <author email="alex at gnilux dot com">alexandre vasseur</author>
+    </properties>
+    <body>
+        <section name="Official Builds">
+            <subsection name="Releases">
+                <p>
+                    The latest official release is 2.0
+                </p>
+                <p>
+                    Download:
+                    <ul>
+                        <li>
+                            <a href="http://dist.codehaus.org/aspectwerkz/distributions/aspectwerkz-2.0.zip?download">2.0</a>
+                        </li>
+                        <li>
+                            <a href="http://dist.codehaus.org/aspectwerkz/distributions/aspectwerkz-2.0.RC3.zip?download">2.0.RC3</a>
+                        </li>
+                        <li>
+                            <a href="http://dist.codehaus.org/aspectwerkz/distributions/aspectwerkz-2.0.RC2.zip?download">2.0.RC2</a>
+                        </li>
+                        <br/>
+                        <li>
+                            <a href="http://dist.codehaus.org/aspectwerkz/distributions/aspectwerkz-1.0.zip?download">1.0</a>
+                        </li>
+                        <br/>
+                        <li>
+                            <a href="http://aspectwerkz.codehaus.org/downloads/">Native HotSwap modules (for Java 1.4).</a>
+                        </li>
+                    </ul>
+                </p>
+            </subsection>
+        </section>
+
+        <section name="Release notes">
+
+            <subsection name="Changes in 2.0 final">
+                <p>
+                    AspectWerkz 2.0 final comes with bug fixes.
+                    <ul>
+                        <li>option -keepjp renamed in -genjp (generate jit join points) (affects offline mode)</li>
+                        <li>perJVM mixin deployment-model restablished</li>
+                        <li>after returning advice was not handled properly in some cases</li>
+                        <li>issue with around advice and set() pointcut could happen with long/double fields</li>
+                        <li>issue with serialization and advised classes not implementing directly java.io.Serializable</li>
+                        <li>issue could happen when using hot re-deployment of advised J2EE applications</li>
+                    </ul>
+                </p>
+            </subsection>
+
+            <subsection name="New features and changes in release 2.0.RC3">
+                <p>
+                    AspectWerkz 2.0.RC3 comes with small features completions and several bug fixes.
+                    <ul>
+                        <li>cflowbelow() is supported</li>
+                        <li>staticinitialization() pointcut (contributed by Alexandru Popescu / Mindstorm)</li>
+                        <li>patterns can be only annotation defined like within(@Foo), execution(@Tx) etc (contributed by Alexandru Popescu / Mindstorm)</li>
+                        <li>new <code>-keepjp</code> option in offline mode to keep internal statically compiled structure and speed up deployment time</li>
+                    </ul>
+                    <ul>
+                        <li>Aspects.aspectOf() fixed to support aspect reuse</li>
+                        <li>Advisable API fixed for call side pointcut</li>
+                    </ul>
+                </p>
+            </subsection>
+
+            <subsection name="New features and changes in release 2.0.RC2">
+                <p>
+                    AspectWerkz 2.0.RC2 comes with several major bug fixes, but comes with feature completion as compared
+                    to 1.0 final (cflow and handler support), as well as with new features :<i>AWProxy</i>, per object instance
+                    programmatic interception mechanism, and strongly typed <code>proceed(args..)</code>.
+                    <br/>
+                    Features completion from 1.0 final:
+                    <ul>
+                        <li>cflow() is supported</li>
+                        <li>handler() pointcut is supported</li>
+                    </ul>
+                    <br/>
+                    New features:
+                    <ul>
+                        <li>strongly typed proceed to change invocation arguments from within an around advice - <a href="new_features_in_2_0.html#Strongly_typed_proceed">read more</a></li>
+                        <li>per object instance programmatic interception - <a href="new_features_in_2_0.html#Per_instance_interception">read more</a></li>
+                        <li>AWProxy, applying aspects <b>transparently</b> to CGLIB or AspectWerkz proxies - <a href="new_features_in_2_0.html#AWProxy:_proxy_awareness_of_aspects">read more</a></li>
+                    </ul>
+                    <br/>
+                    Bug fix:
+                    <ul>
+                        <li>Class not found raised for <i>the aspect classes</i> in application servers</li>
+                        <li>Mixin throwing NPE when using <code>Mixins.mixinOf</code></li>
+                        <li>issue to match on array types like <code>String[]</code></li>
+                        <li>some bugs with joinpoints occuring within a constructor</li>
+                        <li>line number debug information lost after weaving</li>
+                        <li><code>!withincode()</code> was filtering too much</li>
+                        <li>compiling on Java 1.3</li>
+                    </ul>
+                    <br/>
+                    New distribution:
+                    <ul>
+                        <li>To provide better support for Java 5, <b>you now have to use aspectwerkz-jdk5-*.jar when running
+                            Java 5. When running Java 1.3/1.4, you must use aspectwerkz-jdk14-*.jar.</b> In the previous release,
+                            this jar was not required for Java 1.3/1.4 but this leaded to some issues when running with Java 5, so we made
+                            it explicit.
+                        </li>
+                    </ul>
+                </p>
+            </subsection>
+
+
+            <subsection name="New features and changes in release 2.0.RC1">
+
+                <p>
+
+                    AspectWerkz 2.0.RC1 is the first release candidate of the 2.x serie.
+
+                    A lot of improvement have been added (API, semantics, performance) and some 1.x features
+
+                    are not compatible with 2.x.
+
+                </p>
+
+                <p>
+
+                    <a href="new_features_in_2_0.html">Read more about the 2.x specific changes in this section</a>.
+
+                </p>
+
+            </subsection>
+
+        </section>
+
+        <section name="Notes on AspectWerkz 1.x">
+
+            <p>
+
+                AspectWerkz 1.x documentation and release notes has been moved
+                <a href="http://aspectwerkz.codehaus.org/aw1/">here</a>.
+
+                AspectWerkz 1.0 is still actively supported but you are strongly encouraged to migrate to AspectWerkz 2.x.
+
+            </p>
+
+        </section>
+
+    </body>
+
+</document>
+
+
+

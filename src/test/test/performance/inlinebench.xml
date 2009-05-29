@@ -1,0 +1,14 @@
+<!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="inlinebench">
+        <package name="test.performance">
+            <aspect class="InlineBench$Aspect">
+                <advice name="before"
+                    bind-to="execution(void test.performance.InlineBench.toAdvise())"
+                    type="before"/>
+            </aspect>
+        </package>
+    </system>
+</aspectwerkz>

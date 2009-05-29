@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="aspectwerkz" repository="aspectwerkz" href="http://aspectwerkz.codehaus.org">
+    <properties>
+        <title>Navigation</title>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+    </properties>
+    <body>
+        <links>
+            <item name="AspectJ 5" href="/index-merge.html"/>
+            <item name="Tutorials" href="http://docs.codehaus.org/display/AW/Tutorials"/>
+            <item name="News" href="http://blogs.codehaus.org/projects/aspectwerkz/index.html"/>
+            <item name="Lists" href="/lists.html"/>
+            <item name="Wiki" href="http://docs.codehaus.org/display/AW/Home"/>
+            <item name="IRC" href="irc://irc.codehaus.org/aspectwerkz"/>
+            <item name="Codehaus" href="http://codehaus.org"/>
+            <item name="Create an issue" href="http://jira.codehaus.org/secure/CreateIssue.jspa"/>
+        </links>
+        <menu name="General Information">
+            <item name="Overview" href="/index.html"/>
+            <item name="Features" href="/features.html"/>
+            <item name="License" href="/license.html"/>
+            <item name="Downloads" href="/releases.html"/>
+        </menu>
+        <menu name="Documentation">
+            <item name="New features in 2.x" href="/new_features_in_2_0.html"/>
+            <item name="Introduction" href="/introduction.html"/>
+            <item name="Tutorials" href="http://docs.codehaus.org/display/AW/Tutorials"/>
+            <item name="Implementation issues" href="/implementation.html"/>
+            <item name="General definition issues" href="/definition_issues.html"/>
+            <item name="Annotation definition" href="/attribute_definition.html"/>
+            <item name="XML definition" href="/xml_definition.html"/>
+            <item name="Annnotation driven development" href="/annotations.html"/>
+            <item name="Deployment" href="/deployment.html"/>
+            <item name="Weaving" href="/weaving.html"/>
+            <item name="Dynamic AOP" href="/dynamic_aop.html"/>
+            <item name="AOP container extensions" href="/extensions.html"/>
+            <item name="Examples" href="/examples_2.html"/>
+            <item name="IDE integration" href="/ide_integration.html"/>
+            <item name="JavaDoc" href="/apidocs/index.html"/>
+            <item name="FAQ" href="/faq.html"/>
+        </menu>
+        <menu name="Misc.">
+            <item name="Releases &amp; Release notes" href="/releases.html"/>
+            <item name="Build &amp; install" href="/build.html"/>
+            <item name="CVS access" href="/cvs.html"/>
+            <item name="Mailing lists" href="/lists.html"/>
+            <item name="Tasks" href="/tasks.html"/>
+            <item name="Papers, articles &amp; talks" href="/papers_talks.html"/>
+        </menu>
+    </body>
+</project>

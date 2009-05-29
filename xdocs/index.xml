@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <title>Overview</title>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+    </properties>
+    <body>
+        <section name="AspectWerkz 2">
+            <subsection name="Simple, high-performant, dynamic, lightweight and powerful AOP for Java">
+                <p>
+                    <code>AspectWerkz</code> is a dynamic, lightweight and
+                    high-performant AOP framework for Java.
+                </p>
+                <p>
+                    <code>AspectWerkz</code> offers both power and simplicity
+                    and will help you to easily integrate AOP in both new and
+                    existing projects.
+                </p>
+                <p>
+                    <code>AspectWerkz</code> utilizes bytecode
+                    modification to weave your classes at project build-time, class load time or runtime. It hooks in
+                    using standardized JVM level APIs.
+
+                    It has a rich and highly orthogonal join point model. Aspects, advices and
+                    introductions are written in plain Java and your target
+                    classes can be regular POJOs.
+
+                    You have the possibility to add, remove and re-structure
+                    advice as well as swapping the implementation of your
+                    introductions at runtime.
+                                            
+                    Your aspects can be defined using either Java 5 annotations,
+                    Java 1.3/1.4 custom doclets or a simple XML definition
+                    file.
+                </p>
+                <p>
+                    <code>AspectWerkz</code> provides an API to use the very same aspects for <i>proxies</i>, hence
+                    providing a transparent experience, allowing a smooth transition
+                    for users familiar with proxies.
+                </p>
+                <p>
+                    <code>AspectWerkz</code> performance is reported in this <a href="http://docs.codehaus.org/display/AW/AOP+Benchmark">separate project</a>.
+                </p>
+                <p>
+                    <code>AspectWerkz</code> is Free Software. The
+                    <a href="license.html">LGPL-style</a> license allows the use of
+                    <code>AspectWerkz 2.0</code>
+                    in both commercial and open source projects.
+                    <br/>
+                </p>
+                <p>
+                    Sponsored by
+                    <a href="http://www.bea.com">BEA Systems</a>
+                    <img src="bea.bmp" alt="BEA Systems"/>
+                </p>
+            </subsection>
+            <subsection name="AspectJ and AspectWerkz join forces">
+                <p>
+                    The AspectJ and AspectWerkz projects have agreed to work together as one team to produce a single aspect-oriented programming platform building on their complementary strengths and expertise.
+                    <a href="index-merge.html">Read the announcement published on January 2005</a>.
+                </p>
+            </subsection>
+            <subsection name="Notes on AspectWerkz 1.x">
+                <p>
+                    AspectWerkz 1.x documentation and release notes has been moved <a href="http://aspectwerkz.codehaus.org/aw1/">here</a>.
+                    AspectWerkz 1.0 is still actively supported but you are strongly encouraged to migrate to AspectWerkz 2.x.
+                </p>
+            </subsection>
+        </section>
+    </body>
+</document>
+

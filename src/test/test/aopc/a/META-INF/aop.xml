@@ -1,0 +1,17 @@
+<!DOCTYPE aspectwerkz PUBLIC
+    "-//AspectWerkz//DTD//EN"
+    "http://aspectwerkz.codehaus.org/dtd/aspectwerkz2.dtd">
+<aspectwerkz>
+    <system id="system/subCL/a1">
+        <aspect class="test.aopc.a.Aspect" name="subCLAspect">
+            <pointcut name="methodAround" expression="execution(* test.aopc.a.*.methodAround(..))"/>
+            <advice name="logAround" type="around" bind-to="methodAround"/>
+        </aspect>
+    </system>
+    <system id="system/subCL/a2">
+        <aspect class="test.aopc.a.Aspect" name="subCLAspect">
+            <pointcut name="methodAround" expression="execution(* test.aopc.a.*.methodAround(..))"/>
+            <advice name="logAround" type="around" bind-to="methodAround"/>
+        </aspect>
+    </system>
+</aspectwerkz>

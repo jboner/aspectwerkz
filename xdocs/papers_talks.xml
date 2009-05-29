@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<document>
+    <properties>
+        <title>Papers &amp; Talks</title>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <author email="alex at gnilux dot com">alexandre vasseur</author>
+    </properties>
+    <body>
+        <section name="Talks">
+            <p>
+                <ul>
+                    <li>
+                        <b>javaHispano, Nov. 2004, Jonas BonŽr Interview on AOSD</b>
+                        <br/>
+                        [
+                        <a href="http://www.javahispano.org/text.viewer.action?file=jonas_en">Interview in english</a>
+                        <br/>
+                        <a href="http://www.javahispano.org/text.viewer.action?file=jonas_es">Entrevista en español</a>]
+                    </li>
+                    <li>
+                        <b>JAOO 2004, Annotation-driven AOP for Java (September 2004)</b>
+                        Jonas Bon&#233;r's and Alexandre Vasseur's 45 min session at JAOO 2004.
+                        The session goes thru the concept of
+                        <i>annotation defined AOP</i> and
+                        <i>annotation driven AOP</i>
+                        introduced by AspectWerkz.
+                        J2SE 5 Tiger annotations brings a new dimension to those concepts. The session demonstrates how strongly typed
+                        pointcut are achieved in AspectWerkz (2.0 upcoming codebase) and discuss the advantages and drawbacks of such
+                        an approach.
+                        <br/>
+                        [
+                        <a href="/downloads/papers/JAOO2004-AnnotationDrivenAOP.pdf">Session pdf</a>]
+                    </li>
+                    <li>
+                        <b>JavaOne 2004, AspectWerkz AOP BOF, AOP in J2EE technical session (June 2004)</b>
+                        <br/>
+                        <i>Dynamic Aspect Oriented Programming with AspectWerkz</i>
+                        <br/>
+                        <i>Aspect Oriented Programming (AOP) in J2EE environments</i>
+                        Jonas Bon&#233;r's and Alexandre Vasseur's 1 hour BOF and 1 hour technical session at JavaOne 2004.
+                        The BOF goes thru the HelloWorld AOP tutorial and then delivers some more advanced content around AspectWerkz.
+                        The technical session provides concrete demos and code sample about AOP in J2EE, AOP container, annotation driven AOP for
+                        caching concerns, JMX monitoring and JAAS security with Spring based configuration of the aspects, under BEA WebLogic Server. It also goes thru the
+                        AspectWerkz concept of cross-platform AOP container.
+                        <br/>
+                        [
+                        <a href="/downloads/papers/JavaOne2004-TS1391-J2EEAOP.pdf">Technical session pdf</a>
+                        <br/>
+                        <a href="/downloads/papers/JavaOne2004-BOF1392-AspectWerkzAOP.pdf">BOF pdf</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>BEA eWorld 2004, Dynamic AOP: SOA for the application (May 2004)</b>
+                        <br/>
+                        Jonas Bon&#233;r's and Alexandre Vasseur's 1 hour talk providing tech preview of BEA JRockit JVM support for AOP
+                        with concrete demos and code samples.
+                        <br/>
+                        [
+                        <a href="/downloads/papers/eWorld2004-1040_boner_aop-soa.pdf">pdf</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>AOSD 2004, AspectWerkz tutorial (March 2004)</b>
+                        <br/>
+                        Jonas Bon&#233;r's and Alexandre Vasseur's three hour tutorial providing detailled information about AspectWerkz
+                        with emphasis on the
+                        <i>Aspects are regular Java classes</i> idea and
+                        <i>ease of integration</i>, with a complete
+                        demo (available from CVS usually for latest AspectWerkz release, module
+                        <i>tutorial-aosd2004</i>).
+                        <br/>
+                        [
+                        <a href="/downloads/papers/aosd2004_tutorial_aspectwerkz.pdf">pdf</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>AOSD 2004, Invited Industry Talk (March 2004)</b>
+                        <br/>
+                        <i>What are the key issues for commercial AOP use - how does AspectWerkz address them?</i>
+                        <br/>
+                        Jonas Bon&#233;r's keynote about commercial AOP use and design decision for AspectWerkz.
+                        <br/>
+                        [
+                        <a href="/downloads/papers/InvitedTalkAOSD2004.pdf">pdf</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>BeJUG JavaPolis, Antwerp 2003 (December 16, 2003)</b>
+                        <br/>
+                        Jonas Bon&#233;r's one hour talk provides an introduction to AspectWerkz (targets 0.9) and gives concrete
+                        hands on samples (Unit Of Work pattern, JAAS security for POJOs).
+                        <br/>
+                        [
+                        <a href="/downloads/papers/bejug-aspectwerkz-boner.ppt.gz">ppt</a>]
+                    </li>
+                    <br/>
+                </ul>
+            </p>
+        </section>
+        <section name="Papers">
+            <p>
+                <ul>
+                    <li>
+                        <b>TheServerSide.com, AspectWerkz 2: An Extensible Aspect Container (Nov. 2004)</b>
+                        <br/>
+                        In this article, Jonas Bon&#233;r introduces the new AspectWerkz 2.x architecture.
+                        <br/>
+                        AspectWerkz 2.x has been designed to be an extensible AOP container where any kind of
+                        aspects can coexist ranging from Spring aspects to AspectJ aspects.
+                        <br/>
+                        The article explains
+                        why this architecture is beneficial to the Java AOP communtity and explains the benefits
+                        and drawbacks of running AOP Alliance, Spring and AspectJ aspects within the AspectWerkz
+                        Extensible Aspect Container. It concludes with performance figures.
+                        <br/>
+                        [<a href="http://www.theserverside.com/articles/article.tss?l=AspectWerkzP1">Read more</a>] 
+                    </li>
+                    <li>
+                        <b>BEA dev2dev, Enabling Aspect-Oriented Programming in WebLogic Server using the JRockit Management API (June 2004)</b>
+                        <br/>
+                        In this article, you will learn the basic AOP concepts as well as how to apply AOP to your J2EE applications using AspectWerkz, a dynamic AOP framework. The hands-on tutorial explains how to use AOP to track EJB CMP's container generated JDBC queries.
+                        <br/>
+                        You will learn how to integrate AOP in your BEA environment, using a standard offline class post-processing mechanism, class-load time integration in BEA WebLogic Server 8.1 and a dedicated BEA JRockit Management API module that delivers best performance with a minimal integration effort.
+                        <br/>
+                        [
+                        <a href="http://dev2dev.bea.com/technologies/soa/businesslogic/articles/boner_vasseur.jsp">Read more</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>AOSD 2004, Dynamic AOP WorkShop (March 2004)</b>
+                        <br/>
+                        <i>Dynamic AOP and Runtime Weaving for Java - How does AspectWerkz Address it?</i>
+                        <br/>
+                        Alexandre Vasseur's technical paper about dynamic AOP and especially the feature allowing
+                        addition of new pointcuts at runtime using HotSwap (since 1.0-beta1).
+                        <br/>
+                        [
+                        <a href="/downloads/papers/aosd2004-daw-aspectwerkz.pdf">pdf</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>AOSD 2004, Invited Industry Talk Abstract Paper (March 2004)</b>
+                        <br/>
+                        <i>What are the key issues for commercial AOP use - how does AspectWerkz address them?</i>
+                        <br/>
+                        The abstract paper of Jonas Bon&#233;r's invited talk at AOSD 2004, gives an in depth discussion
+                        about the key issues for commercial AOP use and how AspectWerkz tries to address them.
+                        <br/>
+                        [
+                        <a href="htt://codehaus.org/~jboner/papers/aosd2004_commercial_aop_aspectwerkz.pdf">pdf</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>AOSD 2004, (technical paper) (October 2003)</b>
+                        <br/>
+                        <i>AspectWerkz - dynamic AOP for Java</i>
+                        <br/>
+                        Jonas Bon&#233;r's technical paper about the architecture, design and implementation AspectWerkz.
+                        <br/>
+                        [
+                        <a href="htt://codehaus.org/~jboner/papers/aosd2004_aspectwerkz.pdf">pdf</a>]
+                    </li>
+                    <br/>
+                    <li>
+                        <b>Hooking architecture (since 0.8) (August 12, 2003)</b>
+                        <br/>
+                        The hooking architecture allows class load time weaving for all Java version since 1.3 and all
+                        JVMs (Sun, IBM, BEA).
+                        <br/>
+                        [
+                        <a href="/downloads/papers/AspectWerkz-online-architecture.pdf.zip">pdf</a>,
+                        <a href="/downloads/papers/AspectWerkz-online-architecture.ppt.zip">ppt</a>]
+                    </li>
+                    <br/>
+                </ul>
+            </p>
+        </section>
+    </body>
+</document>

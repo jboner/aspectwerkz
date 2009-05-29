@@ -1,0 +1,249 @@
+<?xml version="1.0"?>
+<document>
+    <properties>
+        <author email="jboner at codehaus dot org">jonas bon&#233;r</author>
+        <title>Dynamic AOP</title>
+    </properties>
+    <body>
+        <section name="Note for 2.0.x">
+            <p>
+                Dynamic AOP requires AspectWerkz native library in
+                <code>PATH</code> to be able
+                to work when you are not using Java 5. <b>This is not needed when running Java 5 and the -javaagent startup option.</b>
+            </p>
+            <p>
+                This means that to  make use of the any dynamic feature, such as runtime deployment
+                or undeployment, you need to have the AspectWerkz native library (*.dll, *.so or *.jnilib) in your
+                <code>PATH</code>.
+            </p>
+            <p>
+                These can be found
+                <a href="http://aspectwerkz.codehaus.org/downloads/">here</a>.
+            </p>
+            <p>
+                This is not needed when running Java 5.
+            </p>
+        </section>
+
+        <section name="Table of Contents">
+            <p>
+                <ol>
+                    <li>
+                        <a href="#Introduction">Introduction</a>
+                    </li>
+                    <li>
+                        <a href="#Hot deployment">Hot deployment</a>
+                    </li>
+                    <li>
+                        <a href="#Hot undeployment">Hot undeployment</a>
+                    </li>
+                    <li>
+                        <a href="#Deployment scopes">Deployment scopes</a>
+                    </li>
+                    <li>
+                        <a href="#Deployment handles">Deployment handles</a>
+                    </li>
+                </ol>
+            </p>
+        </section>
+
+        <section name="Introduction">
+            <p>
+                <code>AspectWerkz</code> supports both hot deployment and hot undeployment of aspects.
+                It utilizes HotSwap (Java 1.4) or JVMTI (Java 5) to redefine your application at runtime.
+                New aspects can be added to the running system and old ones can be redefined or removed at runtime.
+            </p>
+            <p>
+                All these services are accessed from the
+                <code>org.codehaus.aspectwerkz.transform.inlining.deployer.Deployer</code> class, which has a rich
+                set of services.
+            </p>
+        </section>
+
+        <section name="Hot deployment">
+            <p>
+                Hot deployment of aspects is done using one of the
+                <code>Deployer.deploy(..)</code> methods.
+            </p>
+            <p>
+                    Here is the API for deployment of aspects (see details below):
+                <source><![CDATA[
+DeploymentHandle deploy(Class aspect)
+
+DeploymentHandle deploy(Class aspect, ClassLoader deployLoader)
+
+DeploymentHandle deploy(Class aspect, DeploymentScope scope, ClassLoader deployLoader)
+
+DeploymentHandle deploy(Class aspect, String xmlDef)
+
+DeploymentHandle deploy(Class aspect, String xmlDef, ClassLoader deployLoader)
+
+DeploymentHandle deploy(Class aspect, String xmlDef, DeploymentScope scope)
+
+DeploymentHandle deploy(Class aspect, String xmlDef, DeploymentScope scope, ClassLoader deployLoader)
+                ]]></source>
+            </p>
+            <p>
+                <b>Details on the deployment API:</b>
+            </p>
+            <p>
+
+                <ul>
+                    <li>
+                    The first three methods are for deployment of annotation defined aspects only and
+                    the last three for XML defined aspects (that can have annotations as well, if so then
+                    the XML definition will override the annotation definition, but apart from that they
+                    will merge).
+                    </li>
+                    <br/>
+                    <li>
+                    As you can see all methods returns a
+                        <code>DeploymentHandle</code>, read more about
+                    that in the section about deployment handles below.
+                    </li>
+                    <br/>
+                    <li>
+                    The class loader passed to the method is the class loader that you want the aspect to
+                    be deployed in. If no class loader is specified then it will use the loader that loaded
+                    the aspect class. (Note: the algorithm will
+                        <b>not</b> handle importing classes from one
+                    class loader to another so they need to be in the same hierarchy.)
+                    </li>
+                    <br/>
+                    <li>
+                    It is recommended that you pass a
+                        <code>DeploymentScope</code> to the
+                        <code>deploy</code>
+                    method if you want predictable and safe deployment. For details, see the section on deployment
+                    scopes below.
+                    </li>
+                </ul>
+            </p>
+
+        </section>
+        <section name="Hot undeployment">
+            <p>
+                Hot undeployment of aspects is done using one of the
+                <code>Deployer.undeploy(..)</code> methods.
+            </p>
+            <p>
+                    Here is the API for undeployment of aspects (see details below):
+                <source><![CDATA[
+void undeploy(Class aspect)
+
+void undeploy(Class aspect, ClassLoader loader)
+
+void undeploy(DeploymentHandle deploymentHandle)
+                ]]></source>
+            </p>
+            <p>
+                <b>Details on the deployment API:</b>
+            </p>
+            <p>
+                <ul>
+                    <li>
+                    You can undeploy an aspect by just specifying the aspect's class. This means that the
+                    aspect will be undeployed from the class loader that has loaded the aspect class.
+                    </li>
+                    <br/>
+                    <li>
+                    If you specify a class loader then the aspect will be undeployed from the class loader that
+                    is specified.
+                    </li>
+                    <br/>
+                    <li>
+                    If you specify a
+                        <code>DeploymentHandle</code> then all join points that where affected by
+                    the deployment event defined by the handle will be reverted to the state they where in
+                    before the deployment occured. This means that
+                        <b>you</b> need to keep track of order and
+                    dependencies etc. e.g. f.e. rollback all changes in the correct order etc.
+                    </li>
+                    <br/>
+                    <li>
+                    If an aspect that is being undeployed can not be found (e.g. is not deployed or is already
+                    undeployed) then nothing happens. No error is triggered.
+                    </li>
+                </ul>
+            </p>
+
+        </section>
+        <section name="Deployment scopes">
+            <p>
+                The use of deployment scopes give you more predictable and safer deployment.
+            </p>
+            <p>
+                They are needed due to the fact that no JVMs today support schema redefinition when
+                redefining your classes.
+            </p>
+            <p>
+                This means that you have to define a special kind of pointcut that we call deployment scope,
+                which will prepare you application and advise the points that you are interested in doing
+                hot deployment on later.
+            </p>
+            <p>
+                You can then retrieve a handle to this deployment scope by getting
+                the actual instance of the abstraction and then use this to narrow down the scope of
+                the deployment so you are sure that you will not try to deploy the aspect at points in your
+                code that will not be affected. Hence you are garantueed that your aspect will be deployed at
+                valid points in your code.
+            </p>
+            <p>
+                <b>Definition</b>
+            </p>
+            <p>
+                    You define the deployment scope just as regular pointcuts, in its own aspect or in the same
+                    aspect as the rest of your code:
+                <source><![CDATA[
+@Expression("execution(String *.toString())")
+DeploymentScope toString;
+                ]]></source>
+
+                <source><![CDATA[
+<deployment-scope name="toString" expression="execution(String *.toString())"/>
+                ]]></source>
+            </p>
+            <p>
+                <b>Runtime retrieval</b>
+            </p>
+            <p>
+                    You can then retrieve the instance of the
+                <code>DeploymentScope</code> like this:
+                <source><![CDATA[
+DeploymentScope scope = SystemDefinition.getDefinitionFor(loader, systemId).getDeploymentScope("toString");
+                ]]></source>
+            </p>
+        </section>
+        <section name="Deployment handles">
+            <p>
+                All
+                <code>deploy(..)</code> methods returns a
+                <code>DeploymentHandle</code> which is a handle to
+                the specific deployment event. You can use this handle to revert the changes made by the deployment,
+                In other words, it allows you to undeploy the aspect you deployed and be sure that it will be
+                undeployed exactly the way it was deployed, same class loader, same deployment scope etc.
+            </p>
+            <p>
+                    You retrieve it from one of the
+                <code>deploy(..)</code> methods and can later use it when
+                    undeploying the aspect:
+                <source><![CDATA[
+// deploy aspect
+DeploymentHandle handle = Deployer.deploy(..);
+
+// store the handle somewhere
+
+...
+
+
+// retrieve the handle from storage
+DeploymentHandle handle = ...
+
+// undeploy using handle
+Deployer.undeploy(handle);
+                ]]></source>
+            </p>
+        </section>
+    </body>
+</document>
+
