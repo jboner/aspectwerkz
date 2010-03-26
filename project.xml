@@ -3,7 +3,7 @@
     <pomVersion>3</pomVersion>
     <name>AspectWerkz - Plain Java AOP</name>
     <id>aspectwerkz</id>
-    <currentVersion>2.1.RC1</currentVersion>
+    <currentVersion>2.1</currentVersion>
     <organization>
         <name>Jonas Bon&#233;r, Alexandre Vasseur</name>
     </organization>
@@ -25,16 +25,14 @@
     <!--    <siteDirectory>/www/aspectwerkz.codehaus.org/</siteDirectory>-->
     <!--    <distributionDirectory>/www/aspectwerkz.codehaus.org/downloads/</distributionDirectory>-->
     <repository>
-        <connection>scm:cvs:pserver:anonymous@cvs.aspectwerkz.codehaus.org:/home/projects/aspectwerkz/scm:aspectwerkz4</connection>
-        <developerConnection>scm:cvs:ext:${maven.username}@cvs.aspectwerkz.codehaus.org:/home/projects/aspectwerkz/scm:aspectwerkz4</developerConnection>
-        <url>http://cvs.aspectwerkz.codehaus.org/</url>
+      <url>http://github.com/jboner/aspectwerkz</url>
     </repository>
     <versions>
         <version>
-            <id>2.1.RC1</id>
-            <name>2.1.RC1</name>
-            <tag>rel_2_1_RC1</tag>
-            <branch>HEAD</branch>
+            <id>2.1</id>
+            <name>2.1</name>
+            <tag>v2.1</tag>
+            <branch>master</branch>
         </version>
     </versions>
     <mailingLists>
@@ -55,8 +53,8 @@
         <developer>
             <name>Jonas Bon&#233;r</name>
             <id>jboner</id>
-            <email>jboner AT codehaus DOT org</email>
-            <organization>BEA Systems</organization>
+            <email>jonas AT jonasboner DOT com</email>
+            <organization>Scalable Solutions AB</organization>
             <roles>
                 <role>Founder</role>
                 <role>Developer</role>
@@ -72,30 +70,7 @@
                 <role>Developer</role>
             </roles>
         </developer>
-        <developer>
-            <name>Alexandru Popescu</name>
-            <id>apopescu</id>
-            <email>the_mindstorm AT evolva DOT ro</email>
-            <organization></organization>
-            <roles>
-                <role>Developer</role>
-            </roles>
-        </developer>
     </developers>
-    <contributors>
-        <contributor>
-            <name>Ron Bodkin</name>
-            <roles>
-                <role>Original idea of Annotation Defined Aspects</role>
-            </roles>
-        </contributor>
-        <contributor>
-            <name>Michael Nascimento</name>
-            <roles>
-                <role>hasMethod and hasField implementation</role>
-            </roles>
-        </contributor>
-    </contributors>
     <dependencies>
         <dependency>
             <id>asm</id>
