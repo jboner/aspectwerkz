@@ -53,7 +53,7 @@
     <!-- =================================================== -->
     <target name="init">
         <property name="name" value="aspectwerkz"/>
-        <property name="version" value="2.1"/>
+        <property name="version" value="2.2"/>
         <property name="basedir" value="."/>
         <property name="src.dir" value="${basedir}/src"/>
         <property name="test.src.dir" value="${basedir}/src/test"/>
@@ -175,8 +175,7 @@
     <!-- ============================================================== -->
     <!-- compiles the Java5 stuff -->
     <!-- ============================================================== -->
-    <target name="compile:jdk15" depends="init" if="jdk15">
-        <echo message="** Found jdk15 specific compilation..."/>
+    <target name="compile:jdk15" depends="init">
         <javac destdir="${jdk15.classes}" deprecation="true" debug="true" optimize="false" source="1.5">
             <src>
                 <pathelement location="src/jdk15/main">
@@ -326,7 +325,7 @@
 
     </target>
 
-    <target name="dist:jdk15" if="jdk15">
+    <target name="dist:jdk15">
         <!-- Java 5 annotation and JVMTI agent if J2SE 5 build -->
         <jar destfile="${build.dir}/aspectwerkz-jdk5-${version}.jar" manifest="${lib.dir}/manifest-core.mf">
             <fileset dir="${jdk15.classes}"/>
@@ -462,7 +461,7 @@
                 <pathelement path="${main.classes}"/>
                 <path refid="project.class.path"/>
             </classpath>
-            <jvmarg line="-javaagent:lib/aspectwerkz-jdk5-2.1.jar -Daspectwerkz.transform.verbose=false -Daspectwerkz.transform.dump=* -Daspectwerkz.definition.file=${src.dir}/jdk15/test/aop.xml"/>
+            <jvmarg line="-javaagent:lib/aspectwerkz-jdk5-2.2.jar -Daspectwerkz.transform.verbose=false -Daspectwerkz.transform.dump=* -Daspectwerkz.definition.file=${src.dir}/jdk15/test/aop.xml"/>
         </java>
     </target>
 
@@ -729,7 +728,7 @@
                 <pathelement path="${main.classes}"/>
                 <path refid="project.class.path"/>
             </classpath>
-            <jvmarg line="-javaagent:lib/aspectwerkz-jdk5-2.1.jar  -Daspectwerkz.definition.file=src/jdk15/samples/examples/callback/aop.xml -Daspectwerkz.transform.verbose=false"/>
+            <jvmarg line="-javaagent:lib/aspectwerkz-jdk5-2.2.jar  -Daspectwerkz.definition.file=src/jdk15/samples/examples/callback/aop.xml -Daspectwerkz.transform.verbose=false"/>
         </java>
     </target>
 
@@ -759,7 +758,7 @@
                 <pathelement path="${main.classes}"/>
                 <path refid="project.class.path"/>
             </classpath>
-            <jvmarg line="-javaagent:lib/aspectwerkz-jdk5-2.1.jar -Daspectwerkz.definition.file=src/jdk15/samples/examples/proxy/aop.xml -Daspectwerkz.transform.verbose=false"/>
+            <jvmarg line="-javaagent:lib/aspectwerkz-jdk5-2.2.jar -Daspectwerkz.definition.file=src/jdk15/samples/examples/proxy/aop.xml -Daspectwerkz.transform.verbose=false"/>
         </java>
     </target>
 

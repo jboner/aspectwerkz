@@ -3,7 +3,7 @@
     <pomVersion>3</pomVersion>
     <name>AspectWerkz - Plain Java AOP</name>
     <id>aspectwerkz</id>
-    <currentVersion>2.1</currentVersion>
+    <currentVersion>2.2</currentVersion>
     <organization>
         <name>Jonas Bon&#233;r, Alexandre Vasseur</name>
     </organization>
@@ -28,6 +28,12 @@
       <url>http://github.com/jboner/aspectwerkz</url>
     </repository>
     <versions>
+        <version>
+            <id>2.2</id>
+            <name>2.2</name>
+            <tag>v2.2</tag>
+            <branch>master</branch>
+        </version>
         <version>
             <id>2.1</id>
             <name>2.1</name>

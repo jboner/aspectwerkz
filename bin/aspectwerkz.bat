@@ -1,5 +1,5 @@
 @REM ----------------------------------------------------------------------------------
-@REM Copyright (c) Jonas Bonér, Alexandre Vasseur. All rights reserved.
+@REM Copyright (c) Jonas Bon√©r, Alexandre Vasseur. All rights reserved.
 @REM http://aspectwerkz.codehaus.org
 @REM ----------------------------------------------------------------------------------
 @REM The software in this package is published under the terms of the LGPL style license
@@ -7,7 +7,7 @@
 @REM ----------------------------------------------------------------------------------
 
 @REM @ECHO OFF
-set ASPECTWERKZ_VERSION=2.1.RC1
+set ASPECTWERKZ_VERSION=2.2
 
 IF "%1"=="" goto error
 IF "%ASPECTWERKZ_HOME%"=="" goto error_no_aw_home

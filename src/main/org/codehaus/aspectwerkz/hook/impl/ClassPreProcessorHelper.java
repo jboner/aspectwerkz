@@ -1,5 +1,5 @@
 /**************************************************************************************
- * Copyright (c) Jonas Bonér, Alexandre Vasseur. All rights reserved.                 *
+ * Copyright (c) Jonas Bon√©r, Alexandre Vasseur. All rights reserved.                 *
  * http://aspectwerkz.codehaus.org                                                    *
  * ---------------------------------------------------------------------------------- *
  * The software in this package is published under the terms of the LGPL license      *
@@ -76,7 +76,6 @@ public class ClassPreProcessorHelper {
             try {
                 preProcessor = (ClassPreProcessor) klass.newInstance();
                 preProcessor.initialize();
-                System.err.println("AspectWerkz - INFO - Pre-processor " + s + " loaded and initialized");
             } catch (Throwable throwable) {
                 System.err.println("AspectWerkz - WARN - Error initializing pre-processor class " + s + ':');
                 throwable.printStackTrace();
