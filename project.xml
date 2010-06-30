@@ -29,6 +29,12 @@
     </repository>
     <versions>
         <version>
+            <id>2.2.1</id>
+            <name>2.2.1</name>
+            <tag>v2.2.1</tag>
+            <branch>master</branch>
+        </version>
+        <version>
             <id>2.2</id>
             <name>2.2</name>
             <tag>v2.2</tag>

@@ -68,7 +68,8 @@ public class ClassPreProcessorHelper {
         try {
             // force loading thru System class loader to allow
             // preprocessor implementation to be in standard classpath
-            klass = Class.forName(s, true, ClassLoader.getSystemClassLoader());
+            klass = Class.forName(s, true, ClassPreProcessor.class.getClassLoader());
+            //klass = Class.forName(s, true, ClassLoader.getSystemClassLoader());
         } catch (ClassNotFoundException _ex) {
             System.err.println("AspectWerkz - WARN - Pre-processor class '" + s + "' not found");
         }

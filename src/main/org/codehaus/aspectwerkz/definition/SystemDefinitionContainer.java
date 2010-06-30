@@ -1,5 +1,5 @@
 /**************************************************************************************
- * Copyright (c) Jonas Bonér, Alexandre Vasseur. All rights reserved.                 *
+ * Copyright (c) Jonas Bon√©r, Alexandre Vasseur. All rights reserved.                 *
  * http://aspectwerkz.codehaus.org                                                    *
  * ---------------------------------------------------------------------------------- *
  * The software in this package is published under the terms of the LGPL license      *
@@ -132,7 +132,7 @@ public class SystemDefinitionContainer {
                     }
                 }
                 Enumeration res = loader.getResources(AOP_META_INF_XML_FILE);
-                while (res.hasMoreElements()) {
+                while (res != null && res.hasMoreElements()) {
                     URL def = (URL) res.nextElement();
                     if (isDefinedBy(loader, def)) {
                         ;
