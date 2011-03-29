@@ -3,7 +3,7 @@
     <pomVersion>3</pomVersion>
     <name>AspectWerkz - Plain Java AOP</name>
     <id>aspectwerkz</id>
-    <currentVersion>2.2</currentVersion>
+    <currentVersion>2.2.3</currentVersion>
     <organization>
         <name>Jonas Bon&#233;r, Alexandre Vasseur</name>
     </organization>
@@ -15,8 +15,7 @@
     </description>
     <licenses>
         <license>
-            <name>LGPL</name>
-            <url>http://www.gnu.org/copyleft/lesser.html</url>
+            <name>Apache 2</name>
         </license>
     </licenses>
     <url>http://aspectwerkz.codehaus.org/</url>
